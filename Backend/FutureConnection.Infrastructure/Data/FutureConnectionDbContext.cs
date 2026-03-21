@@ -57,6 +57,30 @@ namespace FutureConnection.Infrastructure.Data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
+            // ── Global Soft Delete Filter ──
+            foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+            {
+                if (typeof(BaseEntity).IsAssignableFrom(entityType.ClrType))
+                {
+                    modelBuilder.Entity(entityType.ClrType).HasQueryFilter(ConvertFilterExpression(entityType.ClrType));
+                }
+            }
+
+            // ── Database Indexing ──
+            modelBuilder.Entity<User>()
+                .HasIndex(static u => u.Email)
+                .IsUnique();
+
+            modelBuilder.Entity<Job>()
+                .HasIndex(static j => j.Title);
+
+            modelBuilder.Entity<Post>()
+                .HasIndex(static p => p.Title);
+
+            modelBuilder.Entity<Question>()
+                .HasIndex(static q => q.Title);
+
             modelBuilder.Entity<PostTag>()
                 .HasKey(static pt => new { pt.PostId, pt.TagId });
 
@@ -299,6 +323,33 @@ namespace FutureConnection.Infrastructure.Data
                 new Role { Id = employerRoleId, Name = "Employer", Description = "Can post jobs, manage applications, and hire freelancers." },
                 new Role { Id = freelancerRoleId, Name = "Freelancer", Description = "Can apply for jobs, deliver projects, and earn reputation." }
             );
+        }
+
+        private static System.Linq.Expressions.LambdaExpression ConvertFilterExpression(Type type)
+        {
+            var parameter = System.Linq.Expressions.Expression.Parameter(type, "e");
+            var property = System.Linq.Expressions.Expression.Property(parameter, nameof(BaseEntity.IsDeleted));
+            var notExpression = System.Linq.Expressions.Expression.Not(property);
+            return System.Linq.Expressions.Expression.Lambda(notExpression, parameter);
+        }
+
+        public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            var entries = ChangeTracker
+                .Entries()
+                .Where(static e => e.Entity is BaseEntity && (e.State == EntityState.Added || e.State == EntityState.Modified));
+
+            foreach (var entityEntry in entries)
+            {
+                ((BaseEntity)entityEntry.Entity).UpdatedAt = DateTime.UtcNow;
+
+                if (entityEntry.State == EntityState.Added)
+                {
+                    ((BaseEntity)entityEntry.Entity).CreatedAt = DateTime.UtcNow;
+                }
+            }
+
+            return base.SaveChangesAsync(cancellationToken);
         }
     }
 }

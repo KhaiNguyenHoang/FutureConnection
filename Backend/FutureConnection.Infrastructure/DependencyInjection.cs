@@ -10,6 +10,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using FluentValidation;
+using System.Reflection;
 
 namespace FutureConnection.Infrastructure;
 
@@ -19,6 +21,9 @@ public static class DependencyInjection
     {
         services.AddDbContext<FutureConnectionDbContext>(options =>
             options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
+
+        // Register FluentValidation
+        services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
 
         services.AddCors(options =>
         {
