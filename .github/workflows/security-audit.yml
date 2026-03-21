@@ -1,0 +1,33 @@
+name: Dependency Security Audit
+
+on:
+  schedule:
+    # Run every Monday at 08:00 UTC
+    - cron: "0 8 * * 1"
+  workflow_dispatch:
+
+jobs:
+  audit:
+    name: NuGet Security Audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      # dotnet list package --vulnerable will exit non-zero if HIGH severity found
+      - name: Audit NuGet packages for known vulnerabilities
+        run: |
+          dotnet restore Backend/FutureConnection.slnx
+          dotnet list Backend/FutureConnection.slnx package --vulnerable --include-transitive 2>&1 | tee audit.txt
+          # Fail the job if any HIGH or CRITICAL severity is found
+          if grep -i "high\|critical" audit.txt; then
+            echo "❌ High/Critical severity vulnerabilities detected. Please update affected packages."
+            exit 1
+          fi
+          echo "✅ No high-severity vulnerabilities found."

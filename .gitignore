@@ -1,0 +1,7 @@
+bin/
+obj/
+/packages/
+appsettings.Development.json
+.env
+.env.local
+.env.deveplopment

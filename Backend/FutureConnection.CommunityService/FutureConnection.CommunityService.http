@@ -1,0 +1,6 @@
+@FutureConnection.CommunityService_HostAddress = http://localhost:5055
+
+GET {{FutureConnection.CommunityService_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

@@ -1,0 +1,14 @@
+**/*.bin
+**/*.obj
+**/*.pdb
+**/*.user
+**/*.lock.json
+.git/
+.vs/
+.vscode/
+bin/
+obj/
+out/
+docker-compose*
+Dockerfile*
+node_modules/

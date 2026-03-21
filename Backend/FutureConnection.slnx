@@ -1,0 +1,14 @@
+<Solution>
+  <Project Path="FutureConnection.API/FutureConnection.API.csproj" />
+  <Project Path="FutureConnection.Core/FutureConnection.Core.csproj" />
+  <Project Path="FutureConnection.Infrastructure/FutureConnection.Infrastructure.csproj" />
+  <Project Path="FutureConnection.IdentityService/FutureConnection.IdentityService.csproj" />
+  <Project Path="FutureConnection.ProfileService/FutureConnection.ProfileService.csproj" />
+  <Project Path="FutureConnection.JobService/FutureConnection.JobService.csproj" />
+  <Project Path="FutureConnection.ChatService/FutureConnection.ChatService.csproj" />
+  <Project Path="FutureConnection.SocialService/FutureConnection.SocialService.csproj" />
+  <Project Path="FutureConnection.CommunityService/FutureConnection.CommunityService.csproj" />
+  <Project Path="FutureConnection.FreelanceService/FutureConnection.FreelanceService.csproj" />
+  <Project Path="FutureConnection.Gateway/FutureConnection.Gateway.csproj" />
+  <Project Path="FutureConnection.Tests/FutureConnection.Tests.csproj" />
+</Solution>

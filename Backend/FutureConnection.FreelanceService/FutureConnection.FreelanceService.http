@@ -1,0 +1,6 @@
+@FutureConnection.FreelanceService_HostAddress = http://localhost:5084
+
+GET {{FutureConnection.FreelanceService_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
