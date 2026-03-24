@@ -9,10 +9,11 @@ namespace FutureConnection.ChatService.Application
         Task<Response<IEnumerable<MessageDto>>> GetMessagesAsync(Guid channelId, int page, int pageSize);
         Task<Response<MessageDto>> SendMessageAsync(Guid channelId, CreateMessageDto dto);
 
-        Task<Response<IEnumerable<GroupDto>>> GetGroupsAsync();
+        Task<Response<IEnumerable<GroupDto>>> GetGroupsAsync(Guid userId);
         Task<Response<GroupDto>> GetGroupByIdAsync(Guid groupId);
         Task<Response<GroupDto>> CreateGroupAsync(CreateGroupDto dto, Guid creatorId);
-        Task<Response<string>> DeleteGroupAsync(Guid groupId, Guid requesterId);
+        Task<Response<GroupDto>> UpdateGroupAsync(Guid groupId, Guid userId, UpdateGroupDto dto);
+        Task<Response<bool>> DeleteGroupAsync(Guid groupId, Guid userId);
 
         Task<Response<IEnumerable<GroupMemberDto>>> GetGroupMembersAsync(Guid groupId);
         Task<Response<GroupMemberDto>> AddGroupMemberAsync(Guid groupId, CreateGroupMemberDto dto);

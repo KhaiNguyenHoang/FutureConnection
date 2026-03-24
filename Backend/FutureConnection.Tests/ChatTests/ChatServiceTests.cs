@@ -51,7 +51,7 @@ namespace FutureConnection.Tests.ChatTests
         public async Task SendMessageAsync_ShouldFail_WhenChannelNotFound()
         {
             // Arrange
-            _mockChannelRepo.Setup(r => r.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync((Channel?)null);
+            _mockChannelRepo.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), false)).ReturnsAsync((Channel?)null);
             var req = new CreateMessageDto { Content = "Hello" };
 
             // Act
@@ -67,7 +67,7 @@ namespace FutureConnection.Tests.ChatTests
         {
             // Arrange
             var channelId = Guid.NewGuid();
-            _mockChannelRepo.Setup(r => r.GetByIdAsync(channelId)).ReturnsAsync(new Channel { Id = channelId, Name = "Chan" });
+            _mockChannelRepo.Setup(r => r.GetByIdAsync(channelId, false)).ReturnsAsync(new Channel { Id = channelId, Name = "Chan" });
 
             var req = new CreateMessageDto { Content = "Hello" };
             var msgEntity = new Message { Id = Guid.NewGuid(), ChannelId = channelId, Content = "Hello" };
@@ -95,7 +95,7 @@ namespace FutureConnection.Tests.ChatTests
             // Arrange
             var channelId = Guid.NewGuid();
             var messages = new List<Message> { new Message { ChannelId = channelId, Content = "M1" } };
-            _mockMessageRepo.Setup(r => r.GetAllAsync()).ReturnsAsync(messages);
+            _mockMessageRepo.Setup(r => r.GetAllAsync(false)).ReturnsAsync(messages);
             _mockMapper.Setup(m => m.Map<IEnumerable<MessageDto>>(It.IsAny<IEnumerable<Message>>())).Returns(new List<MessageDto> { new MessageDto { Content = "M1" } });
 
             // Act
@@ -113,9 +113,11 @@ namespace FutureConnection.Tests.ChatTests
             var req = new CreateGroupDto { Name = "G1", Description = "D1" };
             var groupRepo = new Mock<IGroupRepository>();
             _mockUow.Setup(u => u.Groups).Returns(groupRepo.Object);
+            _mockMapper.Setup(m => m.Map<Group>(req)).Returns(new Group { Id = Guid.NewGuid(), Name = "G1" });
+            _mockMapper.Setup(m => m.Map<GroupDto>(It.IsAny<Group>())).Returns(new GroupDto { Name = "G1" });
 
             var groupMemberRepo = new Mock<IGroupMemberRepository>();
-            groupMemberRepo.Setup(r => r.CreateAsync(It.IsAny<GroupMember>())).Returns(Task.CompletedTask);
+            groupMemberRepo.Setup(r => r.CreateAsync(It.IsAny<GroupMember>())).ReturnsAsync(new GroupMember());
             _mockUow.Setup(u => u.GroupMembers).Returns(groupMemberRepo.Object);
             var creatorId = Guid.NewGuid();
 
@@ -135,7 +137,7 @@ namespace FutureConnection.Tests.ChatTests
             var requesterId = Guid.NewGuid();
             var messageId = Guid.NewGuid();
             var message = new Message { Id = messageId, Content = "hi", SenderId = requesterId };
-            _mockMessageRepo.Setup(r => r.GetByIdAsync(messageId)).ReturnsAsync(message);
+            _mockMessageRepo.Setup(r => r.GetByIdAsync(messageId, false)).ReturnsAsync(message);
             _mockMessageRepo.Setup(r => r.SoftDeleteAsync(messageId)).Returns(Task.CompletedTask);
 
             // Act

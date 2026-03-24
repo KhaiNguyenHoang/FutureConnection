@@ -5,6 +5,8 @@ namespace FutureConnection.Core.Entities
         public required string Name { get; set; }
         public string? Description { get; set; }
         public string? AvatarUrl { get; set; }
+        public bool IsPrivate { get; set; }
+        public Guid OwnerId { get; set; }
 
         public virtual ICollection<GroupMember> Members { get; set; } = [];
         public virtual ICollection<Message> Messages { get; set; } = [];

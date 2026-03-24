@@ -11,6 +11,14 @@ namespace FutureConnection.ProfileService.Controllers
     [Authorize]
     public class ProfileController(IProfileService profileService) : ControllerBase
     {
+        [HttpGet("public/{userId:guid}")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetPublicProfile(Guid userId)
+        {
+            var result = await profileService.GetPublicProfileAsync(userId);
+            return result.Success ? Ok(result) : NotFound(result);
+        }
+
         [HttpGet("{id:guid}")]
         [AllowAnonymous]
         public async Task<IActionResult> GetProfile(Guid id)
@@ -91,6 +99,7 @@ namespace FutureConnection.ProfileService.Controllers
         public async Task<IActionResult> AddEndorsement(Guid userId, [FromBody] CreateEndorsementDto dto)
         {
             // Endorsement is from current user to userId
+            dto.EndorserId = User.GetUserId();
             var result = await profileService.AddEndorsementAsync(userId, dto);
             return result.Success ? Ok(result) : BadRequest(result);
         }
@@ -140,5 +149,37 @@ namespace FutureConnection.ProfileService.Controllers
         [HttpDelete("open-source/{openSourceId:guid}")]
         public async Task<IActionResult> DeleteOpenSource(Guid openSourceId)
             => Ok(await profileService.DeleteOpenSourceAsync(User.GetUserId(), openSourceId));
+
+        [HttpGet("code-languages")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetAllCodeLanguages()
+            => Ok(await profileService.GetAllCodeLanguagesAsync());
+
+        [HttpGet("frameworks")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetAllFrameworks()
+            => Ok(await profileService.GetAllFrameworksAsync());
+
+        [HttpPost("{userId:guid}/languages/{languageId:guid}")]
+        public async Task<IActionResult> AddUserLanguage(Guid userId, Guid languageId)
+        {
+            if (userId != User.GetUserId()) return Forbid();
+            return Ok(await profileService.AddUserLanguageAsync(userId, languageId));
+        }
+
+        [HttpDelete("languages/{languageId:guid}")]
+        public async Task<IActionResult> RemoveUserLanguage(Guid languageId)
+            => Ok(await profileService.RemoveUserLanguageAsync(User.GetUserId(), languageId));
+
+        [HttpPost("{userId:guid}/frameworks/{frameworkId:guid}")]
+        public async Task<IActionResult> AddUserFramework(Guid userId, Guid frameworkId)
+        {
+            if (userId != User.GetUserId()) return Forbid();
+            return Ok(await profileService.AddUserFrameworkAsync(userId, frameworkId));
+        }
+
+        [HttpDelete("frameworks/{frameworkId:guid}")]
+        public async Task<IActionResult> RemoveUserFramework(Guid frameworkId)
+            => Ok(await profileService.RemoveUserFrameworkAsync(User.GetUserId(), frameworkId));
     }
 }

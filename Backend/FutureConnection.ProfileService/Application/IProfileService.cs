@@ -4,6 +4,7 @@ namespace FutureConnection.ProfileService.Application
 {
     public interface IProfileService
     {
+        Task<Response<UserProfileDto>> GetPublicProfileAsync(Guid userId);
         Task<Response<UserDto>> GetProfileAsync(Guid userId);
         Task<Response<UserDto>> UpdateProfileAsync(Guid userId, UpdateUserDto dto);
 
@@ -31,5 +32,12 @@ namespace FutureConnection.ProfileService.Application
         Task<Response<IEnumerable<OpenSourceContributionDto>>> GetOpenSourcesAsync(Guid userId);
         Task<Response<OpenSourceContributionDto>> AddOpenSourceAsync(Guid userId, CreateOpenSourceContributionDto dto);
         Task<Response<string>> DeleteOpenSourceAsync(Guid userId, Guid openSourceId);
+
+        Task<Response<UserLanguageDto>> AddUserLanguageAsync(Guid userId, Guid codeLanguageId);
+        Task<Response<string>> RemoveUserLanguageAsync(Guid userId, Guid codeLanguageId);
+        Task<Response<UserFrameworkDto>> AddUserFrameworkAsync(Guid userId, Guid frameworkId);
+        Task<Response<string>> RemoveUserFrameworkAsync(Guid userId, Guid frameworkId);
+        Task<Response<IEnumerable<CodeLanguageDto>>> GetAllCodeLanguagesAsync();
+        Task<Response<IEnumerable<FrameworkDto>>> GetAllFrameworksAsync();
     }
 }

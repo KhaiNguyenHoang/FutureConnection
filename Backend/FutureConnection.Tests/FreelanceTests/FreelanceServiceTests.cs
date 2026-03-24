@@ -36,7 +36,7 @@ namespace FutureConnection.Tests.FreelanceTests
             var appEntity = new Application { Id = appId, Status = Core.Enums.ApplicationStatus.Accepted, JobId = Guid.NewGuid(), ApplicantId = req.FreelancerId, CoverLetter = "A" };
 
             var mockAppRepo = new Mock<IApplicationRepository>();
-            mockAppRepo.Setup(r => r.GetByIdAsync(appId)).ReturnsAsync(appEntity);
+            mockAppRepo.Setup(r => r.GetByIdAsync(appId, false)).ReturnsAsync(appEntity);
             _mockUow.Setup(u => u.Applications).Returns(mockAppRepo.Object);
 
             _mockMapper.Setup(m => m.Map<Contract>(req)).Returns(entity);
@@ -56,7 +56,7 @@ namespace FutureConnection.Tests.FreelanceTests
         {
             // Arrange
             var mockTransactionRepo = new Mock<ITransactionRepository>();
-            mockTransactionRepo.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<Transaction>());
+            mockTransactionRepo.Setup(r => r.GetAllAsync(false)).ReturnsAsync(new List<Transaction>());
             _mockUow.Setup(u => u.Transactions).Returns(mockTransactionRepo.Object);
 
             // Act
@@ -73,11 +73,11 @@ namespace FutureConnection.Tests.FreelanceTests
             var mId = Guid.NewGuid();
             var milestone = new ContractMilestone { Id = mId, Title = "M1", Description = "M1", IsCompleted = false };
             var mockMilestoneRepo = new Mock<IContractMilestoneRepository>();
-            mockMilestoneRepo.Setup(r => r.GetByIdAsync(mId)).ReturnsAsync(milestone);
+            mockMilestoneRepo.Setup(r => r.GetByIdAsync(mId, false)).ReturnsAsync(milestone);
             _mockUow.Setup(u => u.ContractMilestones).Returns(mockMilestoneRepo.Object);
 
             var requesterId = Guid.NewGuid();
-            _mockContractRepo.Setup(r => r.GetByIdAsync(milestone.ContractId)).ReturnsAsync(new Contract { Id = milestone.ContractId, FreelancerId = requesterId });
+            _mockContractRepo.Setup(r => r.GetByIdAsync(milestone.ContractId, false)).ReturnsAsync(new Contract { Id = milestone.ContractId, FreelancerId = requesterId });
 
             // Act
             var result = await _contractService.CompleteMilestoneAsync(mId, requesterId);
@@ -96,11 +96,11 @@ namespace FutureConnection.Tests.FreelanceTests
             var contractId = Guid.NewGuid();
             var milestone = new ContractMilestone { Id = mId, Title = "M1", ContractId = contractId, Amount = 100, IsCompleted = true, IsPaid = false };
             var mockMilestoneRepo = new Mock<IContractMilestoneRepository>();
-            mockMilestoneRepo.Setup(r => r.GetByIdAsync(mId)).ReturnsAsync(milestone);
+            mockMilestoneRepo.Setup(r => r.GetByIdAsync(mId, false)).ReturnsAsync(milestone);
             _mockUow.Setup(u => u.ContractMilestones).Returns(mockMilestoneRepo.Object);
 
             var requesterId = Guid.NewGuid();
-            _mockContractRepo.Setup(r => r.GetByIdAsync(contractId)).ReturnsAsync(new Contract { Id = contractId, EmployerId = requesterId, FreelancerId = Guid.NewGuid() });
+            _mockContractRepo.Setup(r => r.GetByIdAsync(contractId, false)).ReturnsAsync(new Contract { Id = contractId, EmployerId = requesterId, FreelancerId = Guid.NewGuid() });
             var mockTransRepo = new Mock<ITransactionRepository>();
             _mockUow.Setup(u => u.Transactions).Returns(mockTransRepo.Object);
 
@@ -122,7 +122,7 @@ namespace FutureConnection.Tests.FreelanceTests
             var appEntity = new Application { Id = appId, Status = Core.Enums.ApplicationStatus.Pending, JobId = Guid.NewGuid(), ApplicantId = Guid.NewGuid(), CoverLetter = "A" };
 
             var mockAppRepo = new Mock<IApplicationRepository>();
-            mockAppRepo.Setup(r => r.GetByIdAsync(appId)).ReturnsAsync(appEntity);
+            mockAppRepo.Setup(r => r.GetByIdAsync(appId, false)).ReturnsAsync(appEntity);
             _mockUow.Setup(u => u.Applications).Returns(mockAppRepo.Object);
 
             // Act
@@ -140,7 +140,7 @@ namespace FutureConnection.Tests.FreelanceTests
             var dId = Guid.NewGuid();
             var dispute = new Dispute { Id = dId, Reason = "Overdue", Status = Core.Enums.DisputeStatus.Open };
             var mockDisputeRepo = new Mock<IDisputeRepository>();
-            mockDisputeRepo.Setup(r => r.GetByIdAsync(dId)).ReturnsAsync(dispute);
+            mockDisputeRepo.Setup(r => r.GetByIdAsync(dId, false)).ReturnsAsync(dispute);
             _mockUow.Setup(u => u.Disputes).Returns(mockDisputeRepo.Object);
 
             // Act

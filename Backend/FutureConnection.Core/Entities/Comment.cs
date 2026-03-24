@@ -15,5 +15,6 @@ namespace FutureConnection.Core.Entities
         public virtual User User { get; set; } = null!;
 
         public virtual ICollection<CommentMedia> Media { get; set; } = [];
+        public virtual ICollection<Reaction> Reactions { get; set; } = [];
     }
 }

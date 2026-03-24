@@ -20,6 +20,50 @@ namespace FutureConnection.Core.DTOs
         public string? ExternalProvider { get; set; }
     }
 
+    public class UserProfileDto
+    {
+        public Guid UserId { get; set; }
+        public required string FirstName { get; set; }
+        public required string LastName { get; set; }
+        public string? AvatarUrl { get; set; }
+        public string? Email { get; set; }
+        public string? PhoneNumber { get; set; }
+        public string? Role { get; set; }
+        public Guid RoleId { get; set; }
+
+        public IEnumerable<CVDto>? CVs { get; set; }
+        public IEnumerable<PersonalProjectDto>? PersonalProjects { get; set; }
+        public IEnumerable<CertificateDto>? Certificates { get; set; }
+        public IEnumerable<UserProfileBadgeDto>? Badges { get; set; }
+        
+        public SocialMediaDto? SocialMedia { get; set; }
+        
+        public IEnumerable<CompanyDto>? OwnedCompanies { get; set; }
+        public IEnumerable<UserLanguageDto>? Languages { get; set; }
+        public IEnumerable<UserFrameworkDto>? Frameworks { get; set; }
+    }
+
+    public class UserLanguageDto
+    {
+        public Guid CodeLanguageId { get; set; }
+        public required string Name { get; set; }
+        public string? DocumentationUrl { get; set; }
+    }
+
+    public class UserFrameworkDto
+    {
+        public Guid FrameworkId { get; set; }
+        public required string Name { get; set; }
+    }
+
+    public class UserProfileBadgeDto
+    {
+        public Guid BadgeId { get; set; }
+        public required string Name { get; set; }
+        public required string Description { get; set; }
+        public string? ImageUrl { get; set; }
+    }
+
     public class LoginUserDto
     {
         public required string Email { get; set; }

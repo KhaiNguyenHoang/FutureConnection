@@ -5,6 +5,7 @@ using FutureConnection.Core.Enums;
 using FutureConnection.Core.Interfaces.Repositories;
 using FutureConnection.ChatService.Hubs;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.EntityFrameworkCore;
 
 namespace FutureConnection.ChatService.Application
 {
@@ -35,12 +36,15 @@ namespace FutureConnection.ChatService.Application
 
         public async Task<Response<IEnumerable<MessageDto>>> GetMessagesAsync(Guid channelId, int page, int pageSize)
         {
-            var messages = await uow.Messages.GetAllAsync();
-            var channelMessages = messages
+            var query = uow.Messages.Query()
+                .Include(m => m.Sender)
                 .Where(m => m.ChannelId == channelId)
-                .OrderByDescending(m => m.CreatedAt)
+                .OrderByDescending(m => m.CreatedAt);
+
+            var channelMessages = await query
                 .Skip((page - 1) * pageSize)
-                .Take(pageSize);
+                .Take(pageSize)
+                .ToListAsync();
 
             return new Response<IEnumerable<MessageDto>> { Success = true, Data = mapper.Map<IEnumerable<MessageDto>>(channelMessages) };
         }
@@ -65,10 +69,17 @@ namespace FutureConnection.ChatService.Application
                 Timestamp = DateTime.UtcNow
             });
 
-            var messageDto = mapper.Map<MessageDto>(message);
-            await hubContext.Clients.Group(channelId.ToString()).SendAsync("ReceiveMessage", messageDto);
+            var messageWithSender = await uow.Messages.Query()
+                .Include(m => m.Sender)
+                .FirstOrDefaultAsync(m => m.Id == message.Id);
 
-            if (message.ReceiverId.HasValue)
+            var messageDto = mapper.Map<MessageDto>(messageWithSender);
+
+            if (message.ChannelId.HasValue)
+            {
+                await hubContext.Clients.Group(message.ChannelId.Value.ToString()).SendAsync("ReceiveMessage", messageDto);
+            }
+            else if (message.ReceiverId.HasValue)
             {
                 await hubContext.Clients.User(message.ReceiverId.Value.ToString()).SendAsync("ReceiveMessage", messageDto);
                 if (message.SenderId != message.ReceiverId.Value)
@@ -80,15 +91,21 @@ namespace FutureConnection.ChatService.Application
             return new Response<MessageDto> { Success = true, Data = messageDto, Message = "Message sent." };
         }
 
-        public async Task<Response<IEnumerable<GroupDto>>> GetGroupsAsync()
+        public async Task<Response<IEnumerable<GroupDto>>> GetGroupsAsync(Guid userId)
         {
-            var groups = await uow.Groups.GetAllAsync();
+            var groups = await uow.Groups.Query()
+                .Include(g => g.Members)
+                .Where(g => !g.IsPrivate || g.Members.Any(m => m.UserId == userId))
+                .ToListAsync();
+
             return new Response<IEnumerable<GroupDto>> { Success = true, Data = mapper.Map<IEnumerable<GroupDto>>(groups) };
         }
 
         public async Task<Response<GroupDto>> CreateGroupAsync(CreateGroupDto dto, Guid creatorId)
         {
             var group = mapper.Map<Group>(dto);
+            group.IsPrivate = dto.IsPrivate;
+            group.OwnerId = creatorId;
             await uow.Groups.CreateAsync(group);
 
             // Add creator as Admin
@@ -110,25 +127,50 @@ namespace FutureConnection.ChatService.Application
             return new Response<GroupDto> { Success = true, Data = mapper.Map<GroupDto>(group) };
         }
 
-        public async Task<Response<string>> DeleteGroupAsync(Guid groupId, Guid requesterId)
+        public async Task<Response<GroupDto>> UpdateGroupAsync(Guid groupId, Guid requesterId, UpdateGroupDto dto)
         {
             var group = await uow.Groups.GetByIdAsync(groupId);
-            if (group == null) return new Response<string> { Success = false, Message = "Group not found." };
+            if (group == null) return new Response<GroupDto> { Success = false, Message = "Group not found." };
 
-            var members = await uow.GroupMembers.GetAllAsync();
-            var requesterMember = members.FirstOrDefault(m => m.GroupId == groupId && m.UserId == requesterId);
+            var members = await uow.GroupMembers.FindAsync(m => m.GroupId == groupId && m.UserId == requesterId);
+            var requesterMember = members.FirstOrDefault();
             if (requesterMember == null || requesterMember.Role != GroupRole.Admin)
-                return new Response<string> { Success = false, Message = "Only group admins can delete the group." };
+                return new Response<GroupDto> { Success = false, Message = "Only group admins can update group details." };
 
-            await uow.Groups.SoftDeleteAsync(groupId);
+            if (!string.IsNullOrEmpty(dto.Name)) group.Name = dto.Name;
+            if (!string.IsNullOrEmpty(dto.Description)) group.Description = dto.Description;
+            group.IsPrivate = dto.IsPrivate;
+
+            uow.Groups.Update(group);
             await uow.CompleteAsync();
-            return new Response<string> { Success = true, Message = "Group deleted." };
+
+            return new Response<GroupDto> { Success = true, Data = mapper.Map<GroupDto>(group), Message = "Group updated successfully." };
+        }
+
+        public async Task<Response<bool>> DeleteGroupAsync(Guid groupId, Guid userId)
+        {
+            var group = await uow.Groups.GetByIdAsync(groupId);
+            if (group == null) return new Response<bool> { Success = false, Message = "Group not found." };
+
+            var members = await uow.GroupMembers.FindAsync(m => m.GroupId == groupId && m.UserId == userId);
+            var member = members.FirstOrDefault();
+            
+            if (member == null || member.Role != GroupRole.Admin)
+                return new Response<bool> { Success = false, Message = "Only admins can delete the group." };
+
+            uow.Groups.HardDelete(group);
+            await uow.CompleteAsync();
+
+            return new Response<bool> { Success = true, Data = true };
         }
 
         public async Task<Response<IEnumerable<GroupMemberDto>>> GetGroupMembersAsync(Guid groupId)
         {
-            var members = await uow.GroupMembers.GetAllAsync();
-            return new Response<IEnumerable<GroupMemberDto>> { Success = true, Data = mapper.Map<IEnumerable<GroupMemberDto>>(members.Where(m => m.GroupId == groupId)) };
+            var members = await uow.GroupMembers.Query()
+                .Include(m => m.User)
+                .Where(m => m.GroupId == groupId)
+                .ToListAsync();
+            return new Response<IEnumerable<GroupMemberDto>> { Success = true, Data = mapper.Map<IEnumerable<GroupMemberDto>>(members) };
         }
 
         public async Task<Response<GroupMemberDto>> AddGroupMemberAsync(Guid groupId, CreateGroupMemberDto dto)
@@ -136,15 +178,42 @@ namespace FutureConnection.ChatService.Application
             var group = await uow.Groups.GetByIdAsync(groupId);
             if (group == null) return new Response<GroupMemberDto> { Success = false, Message = "Group not found." };
 
-            var existing = await uow.GroupMembers.GetAllAsync();
-            if (existing.Any(m => m.GroupId == groupId && m.UserId == dto.UserId))
+            Guid userId;
+            if (dto.UserId.HasValue)
+            {
+                userId = dto.UserId.Value;
+            }
+            else if (!string.IsNullOrEmpty(dto.Email))
+            {
+                var user = await uow.Users.GetUserByEmail(dto.Email);
+                if (user == null) return new Response<GroupMemberDto> { Success = false, Message = "User with this email not found." };
+                userId = user.Id;
+            }
+            else
+            {
+                return new Response<GroupMemberDto> { Success = false, Message = "User ID or Email is required." };
+            }
+
+            var existing = await uow.GroupMembers.FindAsync(m => m.GroupId == groupId && m.UserId == userId);
+            if (existing.Any())
                 return new Response<GroupMemberDto> { Success = false, Message = "User is already a member of this group." };
 
-            var member = mapper.Map<GroupMember>(dto);
-            member.GroupId = groupId;
+            var member = new GroupMember
+            {
+                GroupId = groupId,
+                UserId = userId,
+                Role = dto.Role
+            };
+            
             await uow.GroupMembers.CreateAsync(member);
             await uow.CompleteAsync();
-            return new Response<GroupMemberDto> { Success = true, Data = mapper.Map<GroupMemberDto>(member) };
+
+            // Fetch with user details for the response
+            var memberWithUser = await uow.GroupMembers.Query()
+                .Include(m => m.User)
+                .FirstOrDefaultAsync(m => m.Id == member.Id);
+
+            return new Response<GroupMemberDto> { Success = true, Data = mapper.Map<GroupMemberDto>(memberWithUser) };
         }
 
         public async Task<Response<IEnumerable<ReactionDto>>> GetMessageReactionsAsync(Guid messageId)
@@ -177,16 +246,16 @@ namespace FutureConnection.ChatService.Application
 
         public async Task<Response<string>> RemoveGroupMemberAsync(Guid groupId, Guid requesterId, Guid memberId)
         {
-            var all = await uow.GroupMembers.GetAllAsync();
-
+            var members = await uow.GroupMembers.FindAsync(m => m.GroupId == groupId);
+            
             // Requester must be Admin or removing themselves
-            var requesterMember = all.FirstOrDefault(m => m.GroupId == groupId && m.UserId == requesterId);
+            var requesterMember = members.FirstOrDefault(m => m.UserId == requesterId);
             if (requesterMember == null)
                 return new Response<string> { Success = false, Message = "You are not a member of this group." };
             if (requesterId != memberId && requesterMember.Role != GroupRole.Admin)
                 return new Response<string> { Success = false, Message = "Only group admins can remove other members." };
 
-            var member = all.FirstOrDefault(m => m.GroupId == groupId && m.UserId == memberId);
+            var member = members.FirstOrDefault(m => m.UserId == memberId);
             if (member != null)
             {
                 uow.GroupMembers.HardDelete(member);
@@ -197,12 +266,15 @@ namespace FutureConnection.ChatService.Application
 
         public async Task<Response<IEnumerable<MessageDto>>> GetGroupMessagesAsync(Guid groupId, int page, int pageSize)
         {
-            var messages = await uow.Messages.GetAllAsync();
-            var groupMessages = messages
+            var query = uow.Messages.Query()
+                .Include(m => m.Sender)
                 .Where(m => m.GroupId == groupId)
-                .OrderByDescending(m => m.CreatedAt)
+                .OrderByDescending(m => m.CreatedAt);
+
+            var groupMessages = await query
                 .Skip((page - 1) * pageSize)
-                .Take(pageSize);
+                .Take(pageSize)
+                .ToListAsync();
 
             return new Response<IEnumerable<MessageDto>> { Success = true, Data = mapper.Map<IEnumerable<MessageDto>>(groupMessages) };
         }
@@ -232,7 +304,11 @@ namespace FutureConnection.ChatService.Application
                 Timestamp = DateTime.UtcNow
             });
 
-            var messageDto = mapper.Map<MessageDto>(message);
+            var messageWithSender = await uow.Messages.Query()
+                .Include(m => m.Sender)
+                .FirstOrDefaultAsync(m => m.Id == message.Id);
+
+            var messageDto = mapper.Map<MessageDto>(messageWithSender);
             await hubContext.Clients.Group(groupId.ToString()).SendAsync("ReceiveMessage", messageDto);
 
             return new Response<MessageDto> { Success = true, Data = messageDto, Message = "Message sent." };

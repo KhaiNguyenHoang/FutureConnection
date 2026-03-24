@@ -137,11 +137,11 @@ namespace FutureConnection.JobService.Application
             return new Response<JobDto> { Success = true, Data = mapper.Map<JobDto>(job), Message = "Job posted." };
         }
 
-        public async Task<Response<JobDto>> UpdateAsync(Guid id, Guid requesterId, UpdateJobDto dto)
+        public async Task<Response<JobDto>> UpdateAsync(Guid id, Guid requesterId, bool isAdmin, UpdateJobDto dto)
         {
             var job = await uow.Jobs.GetByIdAsync(id);
             if (job == null) return new Response<JobDto> { Success = false, Message = "Job not found." };
-            if (job.EmployerId != requesterId) return new Response<JobDto> { Success = false, Message = "Unauthorized." };
+            if (!isAdmin && job.EmployerId != requesterId) return new Response<JobDto> { Success = false, Message = "Unauthorized." };
 
             var newMin = dto.SalaryMin ?? job.SalaryMin;
             var newMax = dto.SalaryMax ?? job.SalaryMax;
@@ -163,22 +163,22 @@ namespace FutureConnection.JobService.Application
             return new Response<JobDto> { Success = true, Data = mapper.Map<JobDto>(job), Message = "Job updated." };
         }
 
-        public async Task<Response<string>> DeleteAsync(Guid id, Guid requesterId)
+        public async Task<Response<string>> DeleteAsync(Guid id, Guid requesterId, bool isAdmin)
         {
             var job = await uow.Jobs.GetByIdAsync(id);
             if (job == null) return new Response<string> { Success = false, Message = "Job not found." };
-            if (job.EmployerId != requesterId) return new Response<string> { Success = false, Message = "Unauthorized." };
+            if (!isAdmin && job.EmployerId != requesterId) return new Response<string> { Success = false, Message = "Unauthorized." };
 
             await uow.Jobs.SoftDeleteAsync(id);
             await uow.CompleteAsync();
             return new Response<string> { Success = true, Message = "Job deleted." };
         }
 
-        public async Task<Response<IEnumerable<ApplicationDto>>> GetApplicationsAsync(Guid jobId, Guid requesterId)
+        public async Task<Response<IEnumerable<ApplicationDto>>> GetApplicationsAsync(Guid jobId, Guid requesterId, bool isAdmin)
         {
             var job = await uow.Jobs.GetByIdAsync(jobId);
             if (job == null) return new Response<IEnumerable<ApplicationDto>> { Success = false, Message = "Job not found." };
-            if (job.EmployerId != requesterId) return new Response<IEnumerable<ApplicationDto>> { Success = false, Message = "Unauthorized." };
+            if (!isAdmin && job.EmployerId != requesterId) return new Response<IEnumerable<ApplicationDto>> { Success = false, Message = "Unauthorized." };
 
             var apps = await uow.Applications.GetAllAsync();
             return new Response<IEnumerable<ApplicationDto>> { Success = true, Data = mapper.Map<IEnumerable<ApplicationDto>>(apps.Where(a => a.JobId == jobId)) };
@@ -215,13 +215,13 @@ namespace FutureConnection.JobService.Application
             return new Response<ApplicationDto> { Success = true, Data = mapper.Map<ApplicationDto>(application), Message = "Application submitted." };
         }
 
-        public async Task<Response<ApplicationDto>> UpdateApplicationStatusAsync(Guid applicationId, Guid requesterId, ApplicationStatus status)
+        public async Task<Response<ApplicationDto>> UpdateApplicationStatusAsync(Guid applicationId, Guid requesterId, bool isAdmin, ApplicationStatus status)
         {
             var application = await uow.Applications.GetByIdAsync(applicationId);
             if (application == null) return new Response<ApplicationDto> { Success = false, Message = "Application not found." };
 
             var job = await uow.Jobs.GetByIdAsync(application.JobId);
-            if (job == null || job.EmployerId != requesterId)
+            if (job == null || (!isAdmin && job.EmployerId != requesterId))
                 return new Response<ApplicationDto> { Success = false, Message = "Unauthorized." };
 
             // Enforce valid status transitions

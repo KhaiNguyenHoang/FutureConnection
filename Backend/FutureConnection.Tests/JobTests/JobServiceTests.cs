@@ -50,7 +50,7 @@ namespace FutureConnection.Tests.JobTests
             // Assert
             Assert.True(result.Success);
             Assert.Single(result.Data!);
-            _mockJobRepo.Verify(r => r.GetAllAsync(), Times.Never);
+            _mockJobRepo.Verify(r => r.GetAllAsync(false), Times.Never);
         }
 
         [Fact]
@@ -59,7 +59,7 @@ namespace FutureConnection.Tests.JobTests
             // Arrange
             var jobId = Guid.NewGuid();
             var job = new Job { Id = jobId, Status = JobStatus.Closed, Title = "T", Description = "D" };
-            _mockJobRepo.Setup(r => r.GetByIdAsync(jobId)).ReturnsAsync(job);
+            _mockJobRepo.Setup(r => r.GetByIdAsync(jobId, false)).ReturnsAsync(job);
 
             var req = new CreateApplicationDto { ApplicantId = Guid.NewGuid(), CoverLetter = "Hire me" };
 
@@ -78,9 +78,9 @@ namespace FutureConnection.Tests.JobTests
             // Arrange
             var jobId = Guid.NewGuid();
             var job = new Job { Id = jobId, Status = JobStatus.Open, Title = "Job", Description = "Desc" };
-            _mockJobRepo.Setup(r => r.GetByIdAsync(jobId)).ReturnsAsync(job);
+            _mockJobRepo.Setup(r => r.GetByIdAsync(jobId, false)).ReturnsAsync(job);
 
-            _mockAppRepo.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<Application>());
+            _mockAppRepo.Setup(r => r.GetAllAsync(false)).ReturnsAsync(new List<Application>());
             
             var req = new CreateApplicationDto { ApplicantId = Guid.NewGuid(), CoverLetter = "Hire me" };
             var appEntity = new Application { JobId = jobId, ApplicantId = req.ApplicantId, CoverLetter = "Hire me" };
@@ -104,10 +104,10 @@ namespace FutureConnection.Tests.JobTests
             var jobId = Guid.NewGuid();
             var applicantId = Guid.NewGuid();
             var job = new Job { Id = jobId, Status = JobStatus.Open, Title = "T", Description = "D" };
-            _mockJobRepo.Setup(r => r.GetByIdAsync(jobId)).ReturnsAsync(job);
+            _mockJobRepo.Setup(r => r.GetByIdAsync(jobId, false)).ReturnsAsync(job);
 
             var existingApps = new List<Application> { new Application { JobId = jobId, ApplicantId = applicantId, CoverLetter = "a" } };
-            _mockAppRepo.Setup(r => r.GetAllAsync()).ReturnsAsync(existingApps);
+            _mockAppRepo.Setup(r => r.GetAllAsync(false)).ReturnsAsync(existingApps);
 
             var req = new CreateApplicationDto { ApplicantId = applicantId, CoverLetter = "Duplicate" };
 
@@ -123,7 +123,7 @@ namespace FutureConnection.Tests.JobTests
         public async Task GetByIdAsync_ShouldReturnNotFound_WhenJobDoesNotExist()
         {
             // Arrange
-            _mockJobRepo.Setup(r => r.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync((Job?)null);
+            _mockJobRepo.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), false)).ReturnsAsync((Job?)null);
 
             // Act
             var result = await _jobService.GetByIdAsync(Guid.NewGuid());

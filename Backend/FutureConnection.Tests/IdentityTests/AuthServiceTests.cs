@@ -2,7 +2,9 @@ using FutureConnection.Core.DTOs;
 using FutureConnection.Core.Entities;
 using FutureConnection.Core.Interfaces.Infrastructure;
 using FutureConnection.Core.Interfaces.Repositories;
+using FutureConnection.Core.Utils;
 using FutureConnection.IdentityService.Application;
+using AutoMapper;
 using Microsoft.Extensions.Configuration;
 using Moq;
 using System.Security.Claims;
@@ -16,6 +18,8 @@ namespace FutureConnection.Tests.IdentityTests
         private readonly Mock<IRefreshTokenRepository> _mockTokenRepo;
         private readonly Mock<IConfiguration> _mockConfig;
         private readonly Mock<IEventPublisher> _mockEventPublisher;
+        private readonly Mock<IEmailService> _mockEmailService;
+        private readonly Mock<IMapper> _mockMapper;
         private readonly AuthService _authService;
 
         public AuthServiceTests()
@@ -25,6 +29,8 @@ namespace FutureConnection.Tests.IdentityTests
             _mockTokenRepo = new Mock<IRefreshTokenRepository>();
             _mockConfig = new Mock<IConfiguration>();
             _mockEventPublisher = new Mock<IEventPublisher>();
+            _mockEmailService = new Mock<IEmailService>();
+            _mockMapper = new Mock<IMapper>();
             var mockLogger = new Mock<Microsoft.Extensions.Logging.ILogger<AuthService>>();
 
             _mockUow.Setup(u => u.Users).Returns(_mockUserRepo.Object);
@@ -33,7 +39,8 @@ namespace FutureConnection.Tests.IdentityTests
             _mockConfig.Setup(c => c["Jwt:Issuer"]).Returns("FutureConnection.IdentityService");
             _mockConfig.Setup(c => c["Jwt:Audience"]).Returns("FutureConnection.Clients");
 
-            _authService = new AuthService(_mockUow.Object, _mockConfig.Object, _mockEventPublisher.Object, mockLogger.Object);
+            var mockHasher = new Mock<IPasswordHasher>();
+            _authService = new AuthService(_mockUow.Object, _mockConfig.Object, _mockEventPublisher.Object, _mockEmailService.Object, _mockMapper.Object, mockHasher.Object, mockLogger.Object);
         }
 
         [Fact]
@@ -59,7 +66,7 @@ namespace FutureConnection.Tests.IdentityTests
             _mockUserRepo.Setup(r => r.CheckEmail(It.IsAny<string>())).ReturnsAsync(false);
             
             var freelancerRole = new Role { Id = Guid.NewGuid(), Name = "Freelancer" };
-            _mockUow.Setup(u => u.Roles.GetAllAsync()).ReturnsAsync(new List<Role> { freelancerRole });
+            _mockUow.Setup(u => u.Roles.GetAllAsync(false)).ReturnsAsync(new List<Role> { freelancerRole });
 
             var req = new RegisterRequest("John", "Doe", "new@test.com", "Password123");
             User? createdUser = null;
@@ -131,11 +138,29 @@ namespace FutureConnection.Tests.IdentityTests
         {
             // Arrange
             var userId = Guid.NewGuid();
-            var oldToken = "old-token";
-            var tokenEntity = new RefreshToken { Token = oldToken, UserId = userId, ExpiryDate = DateTime.UtcNow.AddDays(1), CreatedByIp = "0.0.0.0", IsRevoked = false };
+            var oldToken = "VALID_TOKEN";
+            var tokenEntity = new RefreshToken 
+            { 
+                Token = oldToken, 
+                UserId = userId, 
+                ExpiryDate = DateTime.UtcNow.AddMinutes(10), 
+                CreatedByIp = "127.0.0.1", 
+                IsRevoked = false 
+            };
             
-            _mockTokenRepo.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<RefreshToken> { tokenEntity });
-            _mockUserRepo.Setup(r => r.GetByIdAsync(userId)).ReturnsAsync(new User { Id = userId, Email = "a@a.com", HashedPassword = "1", FirstName = "A", LastName = "B", Role = null! });
+            _mockTokenRepo.Setup(r => r.GetByTokenAsync(oldToken)).ReturnsAsync(tokenEntity);
+            _mockUserRepo.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<bool>())).ReturnsAsync(new User 
+            { 
+                Id = userId, 
+                Email = "test@test.com", 
+                HashedPassword = "hashed", 
+                FirstName = "Test", 
+                LastName = "User", 
+                Role = new Role { Name = "User" },
+                IsEmailVerified = true,
+                IsOnboarded = true
+            });
+            _mockMapper.Setup(m => m.Map<IEnumerable<Claim>>(It.IsAny<User>())).Returns(new List<Claim>());
 
             // Act
             var result = await _authService.RefreshTokenAsync(oldToken);
@@ -151,7 +176,7 @@ namespace FutureConnection.Tests.IdentityTests
         public async Task RefreshTokenAsync_ShouldReturnNull_WhenTokenInvalid()
         {
             // Arrange
-            _mockTokenRepo.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<RefreshToken>());
+            _mockTokenRepo.Setup(r => r.GetAllAsync(false)).ReturnsAsync(new List<RefreshToken>());
 
             // Act
             var result = await _authService.RefreshTokenAsync("invalid");

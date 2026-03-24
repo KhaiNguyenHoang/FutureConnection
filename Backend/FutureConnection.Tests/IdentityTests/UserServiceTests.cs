@@ -56,12 +56,12 @@ namespace FutureConnection.Tests.IdentityTests
             // Arrange
             var userId = Guid.NewGuid();
             var user = new User { Id = userId, Email = "a@a", HashedPassword = "old_hashed", FirstName = "A", LastName = "B", Role = null! };
-            _mockUserRepo.Setup(r => r.GetByIdAsync(userId)).ReturnsAsync(user);
-            _mockHasher.Setup(h => h.VerifyPassword("current", "old_hashed")).Returns(true);
-            _mockHasher.Setup(h => h.HashPassword("new")).Returns("new_hashed");
+            _mockUserRepo.Setup(r => r.GetByIdAsync(userId, It.IsAny<bool>())).ReturnsAsync(user);
+            _mockHasher.Setup(h => h.VerifyPassword("current", It.IsAny<string>())).Returns(true);
+            _mockHasher.Setup(h => h.HashPassword("StrongPass123!")).Returns("new_hashed");
 
             // Act
-            var result = await _userService.ChangePasswordAsync(userId, "current", "new");
+            var result = await _userService.ChangePasswordAsync(userId, "current", "StrongPass123!");
 
             // Assert
             Assert.True(result.Success);
@@ -75,7 +75,7 @@ namespace FutureConnection.Tests.IdentityTests
             // Arrange
             var userId = Guid.NewGuid();
             var user = new User { Id = userId, Email = "a@a", HashedPassword = "old_hashed", FirstName = "A", LastName = "B", Role = null! };
-            _mockUserRepo.Setup(r => r.GetByIdAsync(userId)).ReturnsAsync(user);
+            _mockUserRepo.Setup(r => r.GetByIdAsync(userId, It.IsAny<bool>())).ReturnsAsync(user);
             _mockHasher.Setup(h => h.VerifyPassword("wrong", "old_hashed")).Returns(false);
 
             // Act
@@ -91,7 +91,10 @@ namespace FutureConnection.Tests.IdentityTests
         {
             // Arrange
             var mockBlacklist = new Mock<IBlacklistedTokenRepository>();
+            var mockRefresh = new Mock<IRefreshTokenRepository>();
+            mockRefresh.Setup(r => r.GetAllAsync(false)).ReturnsAsync(new List<RefreshToken>());
             _mockUow.Setup(u => u.BlacklistedTokens).Returns(mockBlacklist.Object);
+            _mockUow.Setup(u => u.RefreshTokens).Returns(mockRefresh.Object);
 
             // Act
             var result = await _userService.LogoutAsync(Guid.NewGuid(), "some-token");

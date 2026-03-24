@@ -15,7 +15,7 @@ namespace FutureConnection.SocialService.Controllers
         [HttpGet]
         [AllowAnonymous]
         public async Task<IActionResult> GetFeed([FromQuery] Guid? userId, [FromQuery] PagedRequest request)
-            => Ok(await socialService.GetFeedAsync(userId, request));
+            => Ok(await socialService.GetFeedAsync(userId, User.GetUserId(), request));
 
         [HttpPost]
         public async Task<IActionResult> CreatePost([FromForm] CreatePostDto dto, IFormFileCollection? mediaFiles)
@@ -64,6 +64,11 @@ namespace FutureConnection.SocialService.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> GetPostComments(Guid postId)
             => Ok(await socialService.GetPostCommentsAsync(postId));
+
+        [HttpGet("top-contributors")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetTopContributors([FromQuery] int top = 5)
+            => Ok(await socialService.GetTopContributorsAsync(top));
     }
 
     [ApiController]

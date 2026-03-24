@@ -14,5 +14,6 @@ namespace FutureConnection.Core.Entities
 
         // Tags can reuse the existing Tag entity. Need a Join table QuestionTag.
         public virtual ICollection<QuestionTag> QuestionTags { get; set; } = [];
+        public virtual ICollection<QuestionMedia> Media { get; set; } = [];
     }
 }

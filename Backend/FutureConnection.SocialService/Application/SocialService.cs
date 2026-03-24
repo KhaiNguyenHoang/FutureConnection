@@ -10,16 +10,68 @@ namespace FutureConnection.SocialService.Application
 {
     public class SocialApplicationService(IUnitOfWork uow, IMapper mapper, IMediaService mediaService) : ISocialService
     {
-        public async Task<PagedResponse<PostDto>> GetFeedAsync(Guid? userId, PagedRequest request)
+        public async Task<PagedResponse<PostDto>> GetFeedAsync(Guid? userId, Guid? viewerId, PagedRequest request)
         {
-            var posts = userId.HasValue
-                ? await uow.Posts.FindAsync(p => p.UserId == userId.Value && !p.IsDeleted)
-                : await uow.Posts.FindAsync(p => !p.IsDeleted);
-            var filtered = string.IsNullOrEmpty(request.Keyword)
-                ? posts
-                : posts.Where(p => p.Title.Contains(request.Keyword, StringComparison.OrdinalIgnoreCase)
-                                || p.Content.Contains(request.Keyword, StringComparison.OrdinalIgnoreCase));
-            return PagedResponse<PostDto>.Create(mapper.Map<IEnumerable<PostDto>>(filtered), request.Page, request.PageSize);
+            try
+            {
+                var posts = userId.HasValue
+                    ? await uow.Posts.GetPostsWithDetailsAsync(p => p.UserId == userId.Value && !p.IsDeleted)
+                    : await uow.Posts.GetPostsWithDetailsAsync(p => !p.IsDeleted);
+
+                var filtered = string.IsNullOrEmpty(request.Keyword)
+                    ? posts
+                    : posts.Where(p => (p.Title != null && p.Title.Contains(request.Keyword, StringComparison.OrdinalIgnoreCase))
+                                    || (p.Content != null && p.Content.Contains(request.Keyword, StringComparison.OrdinalIgnoreCase)));
+
+                var dtos = mapper.Map<IEnumerable<PostDto>>(filtered).ToList();
+
+                // If viewerId is provided, check if the user has reacted to each post
+                if (viewerId.HasValue && viewerId.Value != Guid.Empty)
+                {
+                    Console.WriteLine($"[SocialService] Processing reactions for viewer: {viewerId.Value}");
+                    foreach (var dto in dtos)
+                    {
+                        var post = filtered.FirstOrDefault(p => p.Id == dto.Id);
+                        if (post != null)
+                        {
+                            if (post.Reactions == null)
+                            {
+                                Console.WriteLine($"[SocialService] WARNING: Post {post.Id} Reactions collection is null!");
+                                dto.UserHasReacted = false;
+                            }
+                            else
+                            {
+                                dto.UserHasReacted = post.Reactions.Any(r => r.UserId == viewerId.Value);
+                            }
+                        }
+                    }
+                }
+
+                var totalCount = dtos.Count;
+                var pagedData = dtos
+                    .Skip((request.Page - 1) * request.PageSize)
+                    .Take(request.PageSize)
+                    .ToList();
+
+                Console.WriteLine($"[SocialService] GetFeedAsync success: returned {pagedData.Count}/{totalCount} items");
+                return new PagedResponse<PostDto>
+                {
+                    Data = pagedData,
+                    Page = request.Page,
+                    PageSize = request.PageSize,
+                    TotalCount = totalCount
+                };
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[SocialService] EXCEPTION in GetFeedAsync: {ex.GetType().Name} - {ex.Message}");
+                if (ex.InnerException != null)
+                {
+                    Console.WriteLine($"[Inner Exception]: {ex.InnerException.Message}");
+                }
+                Console.WriteLine(ex.StackTrace);
+                throw;
+            }
         }
 
         public async Task<Response<PostDto>> CreatePostAsync(Guid userId, CreatePostDto dto, IFormFileCollection? mediaFiles)
@@ -46,9 +98,51 @@ namespace FutureConnection.SocialService.Application
                 }
             }
 
-            await uow.Posts.CreateAsync(post);
-            await uow.CompleteAsync();
-            return new Response<PostDto> { Success = true, Data = mapper.Map<PostDto>(post), Message = "Post created." };
+            Console.WriteLine($"[SocialService] CreatePostAsync: User {userId}");
+            
+            try
+            {
+                await uow.BeginTransactionAsync();
+
+                await uow.Posts.CreateAsync(post);
+                await uow.CompleteAsync();
+
+                if (dto.Tags != null && dto.Tags.Any())
+                {
+                    post.PostTags = new List<PostTag>();
+                    foreach (var tagName in dto.Tags.Where(t => !string.IsNullOrWhiteSpace(t)).Select(t => t.Trim()))
+                    {
+                        var tag = (await uow.Tags.FindAsync(t => t.Name.ToLower() == tagName.ToLower())).FirstOrDefault();
+                        if (tag == null)
+                        {
+                            tag = new Tag { Name = tagName };
+                            await uow.Tags.CreateAsync(tag);
+                            await uow.CompleteAsync();
+                        }
+
+                        post.PostTags.Add(new PostTag
+                        {
+                            PostId = post.Id,
+                            TagId = tag.Id
+                        });
+                    }
+                    await uow.CompleteAsync();
+                }
+
+                await uow.CommitTransactionAsync();
+                Console.WriteLine($"[SocialService] Post saved successfully: ID {post.Id} with {dto.Tags?.Count ?? 0} tags.");
+            }
+            catch (Exception ex)
+            {
+                await uow.RollbackTransactionAsync();
+                Console.WriteLine($"[SocialService] ERROR saving post: {ex.Message}");
+                if (ex.InnerException != null) Console.WriteLine($"[Inner Exception]: {ex.InnerException.Message}");
+                throw;
+            }
+
+            // Refresh post with full details (Author, Media, etc.)
+            var savedPost = await uow.Posts.GetPostWithDetailsByIdAsync(post.Id);
+            return new Response<PostDto> { Success = true, Data = mapper.Map<PostDto>(savedPost), Message = "Post created." };
         }
 
         public async Task<Response<CommentDto>> CommentAsync(Guid userId, Guid postId, CreateCommentDto dto, IFormFileCollection? mediaFiles)
@@ -79,9 +173,25 @@ namespace FutureConnection.SocialService.Application
                 }
             }
 
-            await uow.Comments.CreateAsync(comment);
-            await uow.CompleteAsync();
-            return new Response<CommentDto> { Success = true, Data = mapper.Map<CommentDto>(comment), Message = "Comment posted." };
+            Console.WriteLine($"[SocialService] CommentAsync: User {userId} on Post {postId}");
+            try
+            {
+                await uow.Comments.CreateAsync(comment);
+                await uow.CompleteAsync();
+                Console.WriteLine($"[SocialService] Comment saved successfully: ID {comment.Id}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[SocialService] ERROR saving comment: {ex.Message}");
+                if (ex.InnerException != null) Console.WriteLine($"[Inner Exception]: {ex.InnerException.Message}");
+                throw;
+            }
+
+            // Refresh comment with full details (Author, etc.)
+            // Assuming there is a method for this, otherwise we use Find
+            var savedComment = (await uow.Comments.GetCommentsWithDetailsByPostIdAsync(postId))
+                                .FirstOrDefault(c => c.Id == comment.Id);
+            return new Response<CommentDto> { Success = true, Data = mapper.Map<CommentDto>(savedComment), Message = "Comment posted." };
         }
 
         public async Task<Response<ReactionDto>> ReactAsync(Guid userId, Guid postId, CreateReactionDto dto)
@@ -108,23 +218,62 @@ namespace FutureConnection.SocialService.Application
 
         public async Task<Response<PostDto>> GetPostByIdAsync(Guid postId)
         {
-            var post = await uow.Posts.GetByIdAsync(postId);
+            var post = await uow.Posts.GetPostWithDetailsByIdAsync(postId);
             if (post == null) return new Response<PostDto> { Success = false, Message = "Post not found." };
             return new Response<PostDto> { Success = true, Data = mapper.Map<PostDto>(post) };
         }
 
         public async Task<Response<PostDto>> UpdatePostAsync(Guid postId, Guid requesterId, UpdatePostDto dto)
         {
-            var post = await uow.Posts.GetByIdAsync(postId);
+            var post = await uow.Posts.GetPostWithDetailsByIdAsync(postId);
             if (post == null) return new Response<PostDto> { Success = false, Message = "Post not found." };
             if (post.UserId != requesterId) return new Response<PostDto> { Success = false, Message = "Unauthorized." };
             
-            if (!string.IsNullOrEmpty(dto.Title)) post.Title = dto.Title;
-            if (!string.IsNullOrEmpty(dto.Content)) post.Content = dto.Content;
-            
-            uow.Posts.Update(post);
-            await uow.CompleteAsync();
-            return new Response<PostDto> { Success = true, Data = mapper.Map<PostDto>(post), Message = "Post updated." };
+            try
+            {
+                await uow.BeginTransactionAsync();
+
+                if (!string.IsNullOrEmpty(dto.Title)) post.Title = dto.Title;
+                if (!string.IsNullOrEmpty(dto.Content)) post.Content = dto.Content;
+                
+                if (dto.Tags != null)
+                {
+                    post.PostTags ??= new List<PostTag>();
+                    post.PostTags.Clear();
+                    
+                    foreach (var tagName in dto.Tags.Where(t => !string.IsNullOrWhiteSpace(t)).Select(t => t.Trim()))
+                    {
+                        var tag = (await uow.Tags.FindAsync(t => t.Name.ToLower() == tagName.ToLower())).FirstOrDefault();
+                        if (tag == null)
+                        {
+                            tag = new Tag { Name = tagName };
+                            await uow.Tags.CreateAsync(tag);
+                            await uow.CompleteAsync();
+                        }
+
+                        post.PostTags.Add(new PostTag
+                        {
+                            PostId = post.Id,
+                            TagId = tag.Id
+                        });
+                    }
+                    await uow.CompleteAsync();
+                }
+
+                uow.Posts.Update(post);
+                await uow.CompleteAsync();
+                await uow.CommitTransactionAsync();
+
+                // Refresh to get full details
+                var updatedPost = await uow.Posts.GetPostWithDetailsByIdAsync(postId);
+                return new Response<PostDto> { Success = true, Data = mapper.Map<PostDto>(updatedPost), Message = "Post updated." };
+            }
+            catch (Exception ex)
+            {
+                await uow.RollbackTransactionAsync();
+                Console.WriteLine($"[SocialService] ERROR updating post: {ex.Message}");
+                throw;
+            }
         }
 
         public async Task<Response<string>> DeletePostAsync(Guid postId, Guid requesterId)
@@ -140,7 +289,7 @@ namespace FutureConnection.SocialService.Application
 
         public async Task<Response<IEnumerable<CommentDto>>> GetPostCommentsAsync(Guid postId)
         {
-            var comments = await uow.Comments.FindAsync(c => c.PostId == postId);
+            var comments = await uow.Comments.GetCommentsWithDetailsByPostIdAsync(postId);
             return new Response<IEnumerable<CommentDto>> { Success = true, Data = mapper.Map<IEnumerable<CommentDto>>(comments) };
         }
 
@@ -192,6 +341,34 @@ namespace FutureConnection.SocialService.Application
             await uow.Reactions.CreateAsync(reaction);
             await uow.CompleteAsync();
             return new Response<ReactionDto> { Success = true, Data = mapper.Map<ReactionDto>(reaction), Message = $"{dto.Type} added to comment." };
+        }
+
+        public async Task<Response<IEnumerable<TopContributorDto>>> GetTopContributorsAsync(int top = 5)
+        {
+            var reputations = await uow.Reputations.FindAsync(r => !r.IsDeleted);
+
+            var reputationGroups = reputations.GroupBy(r => r.UserId)
+                                             .Select(g => new { UserId = g.Key, TotalPoints = g.Sum(r => r.Points) })
+                                             .OrderByDescending(x => x.TotalPoints)
+                                             .Take(top)
+                                             .ToList();
+
+            var topUserIds = reputationGroups.Select(g => g.UserId).ToList();
+            var users = await uow.Users.FindAsync(u => topUserIds.Contains(u.Id));
+
+            var results = reputationGroups.Select(rg => {
+                var u = users.FirstOrDefault(user => user.Id == rg.UserId);
+                return new TopContributorDto
+                {
+                    UserId = rg.UserId,
+                    FirstName = u?.FirstName ?? "Unknown",
+                    LastName = u?.LastName ?? "",
+                    AvatarUrl = u?.AvatarUrl,
+                    BadgeCount = rg.TotalPoints // Mapping reputation points to BadgeCount for compatibility
+                };
+            });
+
+            return new Response<IEnumerable<TopContributorDto>> { Success = true, Data = results };
         }
 
         public async Task<Response<string>> RequestConnectionAsync(Guid requesterId, Guid addresseeId)
@@ -248,6 +425,41 @@ namespace FutureConnection.SocialService.Application
             await uow.Connections.SoftDeleteAsync(connectionId);
             await uow.CompleteAsync();
             return new Response<string> { Success = true, Message = "Connection removed." };
+        }
+
+        public async Task<Response<TicketResponseDto>> CreateTicketAsync(Guid userId, CreateTicketDto dto)
+        {
+            var ticket = mapper.Map<SupportTicket>(dto);
+            ticket.UserId = userId;
+            await uow.SupportTickets.CreateAsync(ticket);
+            await uow.CompleteAsync();
+            return new Response<TicketResponseDto> { Success = true, Data = mapper.Map<TicketResponseDto>(ticket), Message = "Ticket created." };
+        }
+
+        public async Task<Response<IEnumerable<PolicyResponseDto>>> GetPoliciesAsync()
+        {
+            var policies = await uow.Policies.FindAsync(p => !p.IsDeleted);
+            return new Response<IEnumerable<PolicyResponseDto>> { Success = true, Data = mapper.Map<IEnumerable<PolicyResponseDto>>(policies) };
+        }
+
+        public async Task<Response<IEnumerable<FAQResponseDto>>> GetFAQsAsync()
+        {
+            var faqs = await uow.FAQs.FindAsync(f => !f.IsDeleted);
+            return new Response<IEnumerable<FAQResponseDto>> { Success = true, Data = mapper.Map<IEnumerable<FAQResponseDto>>(faqs.OrderBy(f => f.DisplayOrder)) };
+        }
+
+        public async Task<Response<IEnumerable<TicketResponseDto>>> GetMyTicketsAsync(Guid userId)
+        {
+            var tickets = await uow.SupportTickets.FindAsync(t => t.UserId == userId);
+            return new Response<IEnumerable<TicketResponseDto>> { Success = true, Data = mapper.Map<IEnumerable<TicketResponseDto>>(tickets.OrderByDescending(t => t.CreatedAt)) };
+        }
+
+        public async Task<Response<TicketResponseDto>> GetTicketByIdAsync(Guid userId, Guid ticketId)
+        {
+            var ticket = await uow.SupportTickets.GetByIdAsync(ticketId);
+            if (ticket == null || ticket.UserId != userId)
+                return new Response<TicketResponseDto> { Success = false, Message = "Ticket not found." };
+            return new Response<TicketResponseDto> { Success = true, Data = mapper.Map<TicketResponseDto>(ticket) };
         }
     }
 }

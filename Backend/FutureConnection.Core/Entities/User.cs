@@ -73,5 +73,9 @@ namespace FutureConnection.Core.Entities
         // OSS & Community Expansions
         public virtual ICollection<OpenSourceContribution> OpenSourceContributions { get; set; } = [];
         public virtual ICollection<RefreshToken> RefreshTokens { get; set; } = [];
+
+        // Portfolio & Tech Stack
+        public virtual ICollection<UserLanguage> UserLanguages { get; set; } = [];
+        public virtual ICollection<UserFramework> UserFrameworks { get; set; } = [];
     }
 }

@@ -1,78 +1,134 @@
 import { create } from 'zustand';
-import { User } from '@/types';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import Cookies from 'js-cookie';
+import api from '@/lib/api';
+import { User, LoginResponse } from '@/types/auth';
+import { AxiosError } from 'axios';
 
 interface AuthState {
   user: User | null;
-  token: string | null;
+  accessToken: string | null;
   refreshToken: string | null;
   isAuthenticated: boolean;
-  isEmailVerified: boolean;
-  oauthProvider: string | null;
-  setAuth: (user: User, token: string, refreshToken: string) => void;
-  updateUser: (user: Partial<User>) => void;
-  updateTokens: (token: string, refreshToken: string) => void;
+  isLoading: boolean;
+  login: (email: string, password: string) => Promise<{ success: boolean; message?: string }>;
+  oauthLogin: (provider: 'google' | 'github', code: string, redirectUri: string) => Promise<{ success: boolean; message?: string }>;
   logout: () => void;
+  updateUser: (user: Partial<User>) => void;
 }
 
-function loadFromStorage() {
-  if (typeof window === 'undefined') return { user: null, token: null, refreshToken: null };
-  try {
-    const user = JSON.parse(localStorage.getItem('auth_user') || 'null') as User | null;
-    const token = localStorage.getItem('auth_token');
-    const refreshToken = localStorage.getItem('refresh_token');
-    return { user, token, refreshToken };
-  } catch {
-    return { user: null, token: null, refreshToken: null };
-  }
-}
+export const useAuthStore = create<AuthState>()(
+  persist(
+    (set, get) => ({
+      user: null,
+      accessToken: null,
+      refreshToken: null,
+      isAuthenticated: false,
+      isLoading: false,
 
-const { user: storedUser, token: storedToken, refreshToken: storedRefresh } = loadFromStorage();
+      login: async (email, password) => {
+        set({ isLoading: true });
+        try {
+          const response = await api.post<LoginResponse>('/identity/login', { email, password });
+          
+          if (response.data.success) {
+            const { data: user, tokens } = response.data;
+            
+            // Set cookies for API interceptors
+            Cookies.set('accessToken', tokens.accessToken);
+            Cookies.set('refreshToken', tokens.refreshToken);
 
-export const useAuthStore = create<AuthState>((set, get) => ({
-  user: storedUser,
-  token: storedToken,
-  refreshToken: storedRefresh,
-  isAuthenticated: !!storedToken,
-  isEmailVerified: storedUser?.isEmailVerified ?? false,
-  oauthProvider: storedUser?.externalProvider ?? null,
+            set({
+              user,
+              accessToken: tokens.accessToken,
+              refreshToken: tokens.refreshToken,
+              isAuthenticated: true,
+            });
+            return { success: true };
+          }
+          return { success: false, message: response.data.message || 'Login failed' };
+        } catch (error: unknown) {
+          let errorMessage = 'An unexpected error occurred during login';
+          if (error instanceof AxiosError) {
+            const data = error.response?.data as Record<string, unknown>;
+            errorMessage = (data?.message as string) || error.message;
+          } else if (error instanceof Error) {
+            errorMessage = error.message;
+          }
+          return {
+            success: false,
+            message: errorMessage,
+          };
+        } finally {
+          set({ isLoading: false });
+        }
+      },
 
-  setAuth: (user, token, refreshToken) => {
-    localStorage.setItem('auth_token', token);
-    localStorage.setItem('refresh_token', refreshToken);
-    localStorage.setItem('auth_user', JSON.stringify(user));
-    set({
-      user,
-      token,
-      refreshToken,
-      isAuthenticated: true,
-      isEmailVerified: user.isEmailVerified,
-      oauthProvider: user.externalProvider ?? null,
-    });
-  },
+      oauthLogin: async (provider, code, redirectUri) => {
+        set({ isLoading: true });
+        try {
+          const response = await api.post(`/identity/oauth/${provider}`, { code, redirectUri });
+          
+          if (response.data && response.data.success && response.data.data) {
+            const data = response.data.data;
+            const user = data.user || data.User;
+            const accessToken = data.accessToken || data.AccessToken;
+            const refreshToken = data.refreshToken || data.RefreshToken;
+            
+            if (!accessToken || !user) {
+              return { success: false, message: 'Invalid server response: Missing user data or tokens' };
+            }
 
-  updateUser: (partial) => {
-    const current = get().user;
-    if (!current) return;
-    const updated = { ...current, ...partial };
-    localStorage.setItem('auth_user', JSON.stringify(updated));
-    set({
-      user: updated,
-      isEmailVerified: updated.isEmailVerified,
-      oauthProvider: updated.externalProvider ?? null,
-    });
-  },
+            Cookies.set('accessToken', accessToken);
+            Cookies.set('refreshToken', refreshToken || '');
 
-  updateTokens: (token, refreshToken) => {
-    localStorage.setItem('auth_token', token);
-    localStorage.setItem('refresh_token', refreshToken);
-    set({ token, refreshToken, isAuthenticated: true });
-  },
+            set({
+              user,
+              accessToken,
+              refreshToken: refreshToken || null,
+              isAuthenticated: true,
+            });
+            return { success: true };
+          }
+          return { success: false, message: response.data?.message || `${provider} login failed` };
+        } catch (error: unknown) {
+          console.error('OAuth exchange error:', error);
+          let errorMessage = 'OAuth login failed';
+          if (error instanceof AxiosError) {
+            const data = error.response?.data as Record<string, unknown>;
+            errorMessage = (data?.message as string) || (error.response?.statusText) || error.message;
+          }
+          return { success: false, message: errorMessage };
+        } finally {
+          set({ isLoading: false });
+        }
+      },
 
-  logout: () => {
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('refresh_token');
-    localStorage.removeItem('auth_user');
-    set({ user: null, token: null, refreshToken: null, isAuthenticated: false, isEmailVerified: false, oauthProvider: null });
-    window.location.href = '/login';
-  },
-}));
+      logout: () => {
+        Cookies.remove('accessToken');
+        Cookies.remove('refreshToken');
+        set({
+          user: null,
+          accessToken: null,
+          refreshToken: null,
+          isAuthenticated: false,
+        });
+      },
+
+      updateUser: (updatedFields) => {
+        const currentUser = get().user;
+        if (currentUser) {
+          set({ user: { ...currentUser, ...updatedFields } });
+        }
+      },
+    }),
+    {
+      name: 'auth-storage',
+      storage: createJSONStorage(() => localStorage),
+      partialize: (state) => ({
+        user: state.user,
+        isAuthenticated: state.isAuthenticated,
+      }),
+    }
+  )
+);

@@ -2,6 +2,7 @@ using FutureConnection.Core.DTOs;
 using FutureConnection.Core.Utils;
 using FutureConnection.CommunityService.Application;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FutureConnection.CommunityService.Controllers
@@ -25,8 +26,12 @@ namespace FutureConnection.CommunityService.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> AskQuestion([FromBody] CreateQuestionDto dto)
-            => Ok(await questionService.CreateAsync(dto));
+        public async Task<IActionResult> AskQuestion([FromForm] CreateQuestionDto dto)
+        {
+            dto.UserId = User.GetUserId();
+            var result = await questionService.CreateAsync(dto);
+            return result.Success ? Ok(result) : BadRequest(result);
+        }
 
         [HttpPut("{id:guid}")]
         public async Task<IActionResult> UpdateQuestion(Guid id, [FromBody] UpdateQuestionDto dto)
@@ -45,10 +50,11 @@ namespace FutureConnection.CommunityService.Controllers
             => Ok(await questionService.GetAnswersAsync(id));
 
         [HttpPost("{id:guid}/answers")]
-        public async Task<IActionResult> PostAnswer(Guid id, [FromBody] CreateAnswerDto dto)
+        public async Task<IActionResult> PostAnswer(Guid id, [FromForm] CreateAnswerDto dto)
         {
+            dto.UserId = User.GetUserId();
             var result = await questionService.PostAnswerAsync(id, dto);
-            return result.Success ? Ok(result) : NotFound(result);
+            return result.Success ? Ok(result) : BadRequest(result);
         }
 
         [HttpPut("answers/{answerId:guid}/accept")]
@@ -78,6 +84,7 @@ namespace FutureConnection.CommunityService.Controllers
         [HttpPost("{id:guid}/bounties")]
         public async Task<IActionResult> AddBounty(Guid id, [FromBody] CreateBountyDto dto)
         {
+            dto.AwarderId = User.GetUserId();
             var result = await questionService.AddBountyAsync(id, dto);
             return result.Success ? Ok(result) : BadRequest(result);
         }

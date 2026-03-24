@@ -5,7 +5,7 @@ namespace FutureConnection.SocialService.Application
 {
     public interface ISocialService
     {
-        Task<PagedResponse<PostDto>> GetFeedAsync(Guid? userId, PagedRequest request);
+        Task<PagedResponse<PostDto>> GetFeedAsync(Guid? userId, Guid? viewerId, PagedRequest request);
         Task<Response<PostDto>> CreatePostAsync(Guid userId, CreatePostDto dto, IFormFileCollection? mediaFiles);
         Task<Response<CommentDto>> CommentAsync(Guid userId, Guid postId, CreateCommentDto dto, IFormFileCollection? mediaFiles);
         Task<Response<ReactionDto>> ReactAsync(Guid userId, Guid postId, CreateReactionDto dto);
@@ -20,10 +20,19 @@ namespace FutureConnection.SocialService.Application
         Task<Response<IEnumerable<ReactionDto>>> GetCommentReactionsAsync(Guid commentId);
         Task<Response<ReactionDto>> ReactToCommentAsync(Guid userId, Guid commentId, CreateReactionDto dto);
 
+        Task<Response<IEnumerable<TopContributorDto>>> GetTopContributorsAsync(int top = 5);
+
         Task<Response<string>> RequestConnectionAsync(Guid requesterId, Guid addresseeId);
         Task<Response<string>> RespondConnectionAsync(Guid connectionId, Guid userId, Core.Enums.ConnectionStatus status);
         Task<Response<IEnumerable<ConnectionDto>>> GetConnectionsAsync(Guid userId);
         Task<Response<IEnumerable<ConnectionDto>>> GetPendingConnectionsAsync(Guid userId);
         Task<Response<string>> DeleteConnectionAsync(Guid connectionId, Guid userId);
+
+        // Support & Legal
+        Task<Response<TicketResponseDto>> CreateTicketAsync(Guid userId, CreateTicketDto dto);
+        Task<Response<IEnumerable<PolicyResponseDto>>> GetPoliciesAsync();
+        Task<Response<IEnumerable<FAQResponseDto>>> GetFAQsAsync();
+        Task<Response<IEnumerable<TicketResponseDto>>> GetMyTicketsAsync(Guid userId);
+        Task<Response<TicketResponseDto>> GetTicketByIdAsync(Guid userId, Guid ticketId);
     }
 }

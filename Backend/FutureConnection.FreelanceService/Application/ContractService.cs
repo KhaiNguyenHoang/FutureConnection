@@ -31,6 +31,10 @@ namespace FutureConnection.FreelanceService.Application
             if (application.Status != ApplicationStatus.Accepted)
                 return new Response<ContractDto> { Success = false, Message = "Contract can only be created from an accepted application." };
 
+            var job = await uow.Jobs.GetByIdAsync(application.JobId);
+            if (job == null || job.EmployerId != employerId)
+                return new Response<ContractDto> { Success = false, Message = "Unauthorized: You must be the employer of this job to create a contract." };
+
             var contract = mapper.Map<Contract>(dto);
             contract.EmployerId = employerId;
             contract.FreelancerId = application.ApplicantId;

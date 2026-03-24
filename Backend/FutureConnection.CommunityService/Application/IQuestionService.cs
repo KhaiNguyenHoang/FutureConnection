@@ -1,4 +1,5 @@
 using FutureConnection.Core.DTOs;
+using Microsoft.AspNetCore.Http;
 
 namespace FutureConnection.CommunityService.Application
 {

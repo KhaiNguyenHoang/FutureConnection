@@ -3,6 +3,7 @@ using FutureConnection.Core.DTOs;
 using FutureConnection.Core.Entities;
 using FutureConnection.Core.Enums;
 using FutureConnection.Core.Interfaces.Repositories;
+using FutureConnection.Core.Interfaces.Infrastructure;
 using FutureConnection.CommunityService.Application;
 using Moq;
 using System.Collections.Generic;
@@ -18,6 +19,7 @@ namespace FutureConnection.Tests.CommunityTests
         private readonly Mock<IQuestionRepository> _mockQuestionRepo;
         private readonly Mock<IVoteRepository> _mockVoteRepo;
         private readonly Mock<IMapper> _mockMapper;
+        private readonly Mock<IMediaService> _mockMediaService;
         private readonly QuestionService _questionService;
 
         public CommunityServiceTests()
@@ -26,11 +28,12 @@ namespace FutureConnection.Tests.CommunityTests
             _mockQuestionRepo = new Mock<IQuestionRepository>();
             _mockVoteRepo = new Mock<IVoteRepository>();
             _mockMapper = new Mock<IMapper>();
+            _mockMediaService = new Mock<IMediaService>();
 
             _mockUow.Setup(u => u.Questions).Returns(_mockQuestionRepo.Object);
             _mockUow.Setup(u => u.Votes).Returns(_mockVoteRepo.Object);
 
-            _questionService = new QuestionService(_mockUow.Object, _mockMapper.Object);
+            _questionService = new QuestionService(_mockUow.Object, _mockMapper.Object, _mockMediaService.Object);
         }
 
         [Fact]
@@ -49,7 +52,7 @@ namespace FutureConnection.Tests.CommunityTests
             // Assert
             Assert.True(result.Success);
             _mockQuestionRepo.Verify(r => r.CreateAsync(entity), Times.Once);
-            _mockUow.Verify(u => u.CompleteAsync(), Times.Once);
+            _mockUow.Verify(u => u.CompleteAsync(), Times.AtLeastOnce);
         }
 
         [Fact]
@@ -60,7 +63,7 @@ namespace FutureConnection.Tests.CommunityTests
             var qId = Guid.NewGuid();
             var q = new Question { Id = qId, UserId = authorId, Title = "Help", Content = "Need help" };
 
-            _mockQuestionRepo.Setup(r => r.GetByIdAsync(qId)).ReturnsAsync(q);
+            _mockQuestionRepo.Setup(r => r.GetByIdAsync(qId, false)).ReturnsAsync(q);
             var req = new CreateVoteDto { UserId = authorId, Type = FutureConnection.Core.Enums.VoteType.Upvote };
 
             // Act
@@ -79,8 +82,8 @@ namespace FutureConnection.Tests.CommunityTests
             var qId = Guid.NewGuid();
             var q = new Question { Id = qId, UserId = authorId, Title = "H", Content = "C" };
 
-            _mockQuestionRepo.Setup(r => r.GetByIdAsync(qId)).ReturnsAsync(q);
-            _mockVoteRepo.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<Vote>());
+            _mockQuestionRepo.Setup(r => r.GetByIdAsync(qId, false)).ReturnsAsync(q);
+            _mockVoteRepo.Setup(r => r.GetAllAsync(false)).ReturnsAsync(new List<Vote>());
             
             var repRepo = new Mock<IReputationRepository>();
             _mockUow.Setup(u => u.Reputations).Returns(repRepo.Object);
@@ -103,8 +106,11 @@ namespace FutureConnection.Tests.CommunityTests
             // Arrange
             var voterId = Guid.NewGuid();
             var qId = Guid.NewGuid();
-            _mockQuestionRepo.Setup(r => r.GetByIdAsync(qId)).ReturnsAsync(new Question { Id = qId, UserId = Guid.NewGuid(), Title = "T", Content = "C" });
-            _mockVoteRepo.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<Vote> { new Vote { QuestionId = qId, UserId = voterId } });
+            _mockQuestionRepo.Setup(r => r.GetByIdAsync(qId, false)).ReturnsAsync(new Question { Id = qId, UserId = Guid.NewGuid(), Title = "T", Content = "C" });
+            _mockVoteRepo.Setup(r => r.GetAllAsync(false)).ReturnsAsync(new List<Vote> { new Vote { QuestionId = qId, UserId = voterId, Type = VoteType.Upvote } });
+
+            var repRepo = new Mock<IReputationRepository>();
+            _mockUow.Setup(u => u.Reputations).Returns(repRepo.Object);
 
             var req = new CreateVoteDto { UserId = voterId, Type = VoteType.Upvote };
 
@@ -112,8 +118,8 @@ namespace FutureConnection.Tests.CommunityTests
             var result = await _questionService.VoteQuestionAsync(qId, req);
 
             // Assert
-            Assert.False(result.Success);
-            Assert.Contains("already voted", result.Message!);
+            Assert.True(result.Success);
+            Assert.Contains("removed", result.Message!);
         }
 
         [Fact]
@@ -121,7 +127,7 @@ namespace FutureConnection.Tests.CommunityTests
         {
             // Arrange
             var qId = Guid.NewGuid();
-            _mockQuestionRepo.Setup(r => r.GetByIdAsync(qId)).ReturnsAsync(new Question { Id = qId, Title = "T", Content = "C" });
+            _mockQuestionRepo.Setup(r => r.GetByIdAsync(qId, false)).ReturnsAsync(new Question { Id = qId, Title = "T", Content = "C" });
             
             var ansRepo = new Mock<IAnswerRepository>();
             _mockUow.Setup(u => u.Answers).Returns(ansRepo.Object);
@@ -142,7 +148,7 @@ namespace FutureConnection.Tests.CommunityTests
         public async Task GetByIdAsync_ShouldReturnNotFound_WhenQuestionDoesNotExist()
         {
             // Arrange
-            _mockQuestionRepo.Setup(r => r.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync((Question?)null);
+            _mockQuestionRepo.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), false)).ReturnsAsync((Question?)null);
 
             // Act
             var result = await _questionService.GetByIdAsync(Guid.NewGuid());

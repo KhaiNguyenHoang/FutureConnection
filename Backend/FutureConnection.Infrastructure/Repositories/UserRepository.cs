@@ -10,7 +10,7 @@ public class UserRepository(FutureConnectionDbContext context) : GenericReposito
     public async Task<User?> GetUserByEmail(string email) =>
         await _context.Users
             .Include(u => u.Role)
-            .FirstOrDefaultAsync(u => u.Email == email);
+            .FirstOrDefaultAsync(u => u.Email.ToLower() == email.ToLower());
 
     public async Task<User?> GetUserByPhoneNumber(string phoneNumber) =>
         await _context.Users
@@ -21,7 +21,7 @@ public class UserRepository(FutureConnectionDbContext context) : GenericReposito
         await _context.Users.AnyAsync(u => u.Id == userId && !u.IsDeleted);
 
     public async Task<bool> CheckEmail(string email) =>
-        await _context.Users.AnyAsync(u => u.Email == email && !u.IsDeleted);
+        await _context.Users.AnyAsync(u => u.Email.ToLower() == email.ToLower() && !u.IsDeleted);
 
     public override async Task<User?> GetByIdAsync(Guid id, bool includeDeleted = false)
     {

@@ -1,9 +1,9 @@
+using System.Security.Claims;
 using FutureConnection.Core.DTOs;
 using FutureConnection.IdentityService.Application;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
-using System.Security.Claims;
+using Microsoft.AspNetCore.Mvc;
 
 namespace FutureConnection.IdentityService.Controllers
 {
@@ -33,7 +33,7 @@ namespace FutureConnection.IdentityService.Controllers
             var tokenResult = await authService.LoginAsync(new LoginRequest(dto.Email, dto.Password, clientIp));
             if (tokenResult == null) return Unauthorized(new { Success = false, Message = "Authentication failed" });
 
-            return Ok(new { Success = true, Data = userResult.Data, Tokens = tokenResult });
+            return Ok(new { Success = true, userResult.Data, Tokens = tokenResult });
         }
 
         [HttpPost("refresh-token")]

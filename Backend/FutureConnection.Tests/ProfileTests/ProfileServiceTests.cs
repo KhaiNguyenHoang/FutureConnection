@@ -49,7 +49,7 @@ namespace FutureConnection.Tests.ProfileTests
             // Assert
             Assert.True(result.Success);
             Assert.Equal("Cached", result.Data!.FirstName);
-            _mockUserRepo.Verify(r => r.GetByIdAsync(It.IsAny<Guid>()), Times.Never);
+            _mockUserRepo.Verify(r => r.GetByIdAsync(It.IsAny<Guid>(), false), Times.Never);
         }
 
         [Fact]
@@ -61,7 +61,7 @@ namespace FutureConnection.Tests.ProfileTests
             var mappedUser = new UserDto { Id = userId, FirstName = "DBUser", LastName = "Last", Email = "a@a" };
 
             _mockCache.Setup(c => c.GetAsync<UserDto>(It.IsAny<string>())).ReturnsAsync((UserDto?)null);
-            _mockUserRepo.Setup(r => r.GetByIdAsync(userId)).ReturnsAsync(user);
+            _mockUserRepo.Setup(r => r.GetByIdAsync(userId, It.IsAny<bool>())).ReturnsAsync(user);
             _mockMapper.Setup(m => m.Map<UserDto>(user)).Returns(mappedUser);
 
             // Act
@@ -85,7 +85,7 @@ namespace FutureConnection.Tests.ProfileTests
             };
             var mappedCvs = new List<CVDto> { new CVDto { University = "MIT" } };
 
-            _mockCvRepo.Setup(r => r.GetAllAsync()).ReturnsAsync(cvs);
+            _mockCvRepo.Setup(r => r.GetAllAsync(false)).ReturnsAsync(cvs);
             _mockMapper.Setup(m => m.Map<IEnumerable<CVDto>>(It.IsAny<IEnumerable<CV>>())).Returns(mappedCvs);
 
             // Act
@@ -103,7 +103,8 @@ namespace FutureConnection.Tests.ProfileTests
             var userId = Guid.NewGuid();
             var user = new User { Id = userId, FirstName = "Old", LastName = "Name", Email = "a@a", HashedPassword = "1", Role = null! };
             var dto = new UpdateUserDto { FirstName = "New" };
-            _mockUserRepo.Setup(r => r.GetByIdAsync(userId)).ReturnsAsync(user);
+            _mockUserRepo.Setup(r => r.GetByIdAsync(userId, It.IsAny<bool>())).ReturnsAsync(user);
+            _mockMapper.Setup(m => m.Map(dto, user)).Callback(() => user.FirstName = dto.FirstName!);
 
             // Act
             var result = await _profileService.UpdateProfileAsync(userId, dto);

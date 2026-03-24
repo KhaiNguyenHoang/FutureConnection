@@ -294,6 +294,10 @@ services:
     environment:
       - AllowedOrigins__0=http://localhost:3000
       - AllowedOrigins__1=http://futureconnection_frontend:3000
+      - Jwt__Key=${JWT_KEY}
+      - Jwt__Issuer=FutureConnection.IdentityService
+      - Jwt__Audience=FutureConnection.Clients
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=FutureConnectionDb;User Id=sa;Password=${SA_PASSWORD};TrustServerCertificate=True
     ports:
       - "5000:8080"
     restart: unless-stopped
@@ -325,36 +329,29 @@ services:
     container_name: futureconnection_api
     environment:
       - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=FutureConnectionDb;User Id=sa;Password=${SA_PASSWORD};TrustServerCertificate=True
+      - ConnectionStrings__Redis=redis:6379
+      - ConnectionStrings__Kafka=kafka:9093
+      - Jwt__Key=${JWT_KEY}
+      - Jwt__Issuer=FutureConnection.IdentityService
+      - Jwt__Audience=FutureConnection.Clients
       - Cloudinary__CloudName=${CLOUDINARY_CLOUD_NAME}
       - Cloudinary__ApiKey=${CLOUDINARY_API_KEY}
       - Cloudinary__ApiSecret=${CLOUDINARY_API_SECRET}
     depends_on:
       sqlserver:
         condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
     ports:
       - "5008:8080"
     restart: unless-stopped
-
-  frontend:
-    build:
-      context: ../frontend
-      dockerfile: Dockerfile
-      args:
-        - NEXT_PUBLIC_API_URL=http://localhost:5000/api
-        - NEXT_PUBLIC_APP_URL=http://localhost:3000
-        - NEXT_PUBLIC_GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID}
-        - NEXT_PUBLIC_GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
-        - NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME}
-        - NEXT_PUBLIC_CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY}
-        - NEXT_PUBLIC_CLOUDINARY_SECRET=${CLOUDINARY_API_SECRET}
-        - NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET=${CLOUDINARY_UPLOAD_PRESET}
-    container_name: futureconnection_frontend
-    ports:
-      - "3000:3000"
-    depends_on:
-      gateway:
-        condition: service_healthy
-    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/healthz || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
 
 volumes:
   sqlserver_data:

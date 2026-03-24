@@ -20,13 +20,13 @@ namespace FutureConnection.JobService.Application
         Task<PagedResponse<JobDto>> GetJobsAsync(PagedRequest request, string? locationType, string? seniority, decimal? minSalary, decimal? maxSalary);
         Task<Response<JobDto>> GetByIdAsync(Guid id);
         Task<Response<JobDto>> CreateAsync(Guid employerId, CreateJobDto dto);
-        Task<Response<JobDto>> UpdateAsync(Guid jobId, Guid requesterId, UpdateJobDto dto);
-        Task<Response<string>> DeleteAsync(Guid jobId, Guid requesterId);
+        Task<Response<JobDto>> UpdateAsync(Guid jobId, Guid requesterId, bool isAdmin, UpdateJobDto dto);
+        Task<Response<string>> DeleteAsync(Guid jobId, Guid requesterId, bool isAdmin);
 
-        Task<Response<IEnumerable<ApplicationDto>>> GetApplicationsAsync(Guid jobId, Guid requesterId);
+        Task<Response<IEnumerable<ApplicationDto>>> GetApplicationsAsync(Guid jobId, Guid requesterId, bool isAdmin);
         Task<Response<IEnumerable<ApplicationDto>>> GetMyApplicationsAsync(Guid applicantId);
         Task<Response<ApplicationDto>> ApplyAsync(Guid jobId, Guid applicantId, CreateApplicationDto dto);
-        Task<Response<ApplicationDto>> UpdateApplicationStatusAsync(Guid applicationId, Guid requesterId, Core.Enums.ApplicationStatus status);
+        Task<Response<ApplicationDto>> UpdateApplicationStatusAsync(Guid applicationId, Guid requesterId, bool isAdmin, Core.Enums.ApplicationStatus status);
 
         Task<Response<IEnumerable<JobTypeDto>>> GetJobTypesAsync();
         Task<Response<JobTypeDto>> CreateJobTypeAsync(CreateJobTypeDto dto);

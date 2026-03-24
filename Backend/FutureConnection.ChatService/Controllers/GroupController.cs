@@ -13,12 +13,19 @@ namespace FutureConnection.ChatService.Controllers
     {
         [HttpGet]
         public async Task<IActionResult> GetGroups()
-            => Ok(await chatService.GetGroupsAsync());
+            => Ok(await chatService.GetGroupsAsync(User.GetUserId()));
 
         [HttpPost]
         public async Task<IActionResult> CreateGroup([FromBody] CreateGroupDto dto)
         {
             var result = await chatService.CreateGroupAsync(dto, User.GetUserId());
+            return result.Success ? Ok(result) : BadRequest(result);
+        }
+
+        [HttpPut("{groupId:guid}")]
+        public async Task<IActionResult> UpdateGroup(Guid groupId, [FromBody] UpdateGroupDto dto)
+        {
+            var result = await chatService.UpdateGroupAsync(groupId, User.GetUserId(), dto);
             return result.Success ? Ok(result) : BadRequest(result);
         }
 

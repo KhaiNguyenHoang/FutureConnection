@@ -8,6 +8,7 @@ public interface IGenericRepository<T> where T : BaseEntity
     Task<T?> GetByIdAsync(Guid id, bool includeDeleted = false);
     Task<IReadOnlyList<T>> GetAllAsync(bool includeDeleted = false);
     Task<IReadOnlyList<T>> FindAsync(Expression<Func<T, bool>> predicate, bool includeDeleted = false);
+    IQueryable<T> Query(bool includeDeleted = false);
 
     Task<T> CreateAsync(T entity);
     Task CreateRangeAsync(IEnumerable<T> entities);

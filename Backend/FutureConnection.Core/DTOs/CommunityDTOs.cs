@@ -9,6 +9,18 @@ namespace FutureConnection.Core.DTOs
         public required string Title { get; set; }
         public required string Content { get; set; }
         public Guid UserId { get; set; }
+        
+        public string? AuthorFirstName { get; set; }
+        public string? AuthorLastName { get; set; }
+        public string? AuthorAvatarUrl { get; set; }
+        
+        public int ReactionCount { get; set; }
+        public int CommentCount { get; set; }
+        public int ShareCount { get; set; }
+        public int ViewCount { get; set; }
+        public bool UserHasReacted { get; set; }
+        public List<PostMediaDto>? Media { get; set; }
+        public List<string>? Tags { get; set; }
     }
 
     public class CreatePostDto
@@ -16,6 +28,7 @@ namespace FutureConnection.Core.DTOs
         public required string Title { get; set; }
         public required string Content { get; set; }
         public Guid UserId { get; set; }
+        public List<string>? Tags { get; set; }
     }
 
     public class UpdatePostDto
@@ -23,6 +36,14 @@ namespace FutureConnection.Core.DTOs
         public Guid Id { get; set; }
         public string? Title { get; set; }
         public string? Content { get; set; }
+        public List<string>? Tags { get; set; }
+    }
+
+    public class PostMediaDto : BaseDto
+    {
+        public required string MediaUrl { get; set; }
+        public string? PublicId { get; set; }
+        public string? ResourceType { get; set; }
     }
 
     // --- PostTag DTOs ---
@@ -45,6 +66,10 @@ namespace FutureConnection.Core.DTOs
         public Guid? ParentCommentId { get; set; }
         public Guid PostId { get; set; }
         public Guid UserId { get; set; }
+
+        public string? AuthorFirstName { get; set; }
+        public string? AuthorLastName { get; set; }
+        public string? AuthorAvatarUrl { get; set; }
     }
 
     public class CreateCommentDto
@@ -65,14 +90,16 @@ namespace FutureConnection.Core.DTOs
     public class ReactionDto : BaseDto
     {
         public ReactionType Type { get; set; }
-        public Guid PostId { get; set; }
+        public Guid? PostId { get; set; }
+        public Guid? CommentId { get; set; }
         public Guid UserId { get; set; }
     }
 
     public class CreateReactionDto
     {
         public ReactionType Type { get; set; }
-        public Guid PostId { get; set; }
+        public Guid? PostId { get; set; }
+        public Guid? CommentId { get; set; }
         public Guid UserId { get; set; }
     }
 
@@ -81,6 +108,9 @@ namespace FutureConnection.Core.DTOs
     {
         public required string Content { get; set; }
         public Guid SenderId { get; set; }
+        public string? SenderFirstName { get; set; }
+        public string? SenderLastName { get; set; }
+        public string? SenderAvatarUrl { get; set; }
         public Guid? ReceiverId { get; set; }
         public Guid? GroupId { get; set; }
         public Guid? ChannelId { get; set; }
@@ -124,5 +154,15 @@ namespace FutureConnection.Core.DTOs
         public string? Name { get; set; }
         public string? Description { get; set; }
         public ChannelType? Type { get; set; }
+    }
+
+    // --- Top Contributor DTOs ---
+    public class TopContributorDto
+    {
+        public Guid UserId { get; set; }
+        public string FirstName { get; set; } = null!;
+        public string LastName { get; set; } = null!;
+        public string? AvatarUrl { get; set; }
+        public int BadgeCount { get; set; }
     }
 }

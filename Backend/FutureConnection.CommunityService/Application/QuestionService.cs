@@ -3,44 +3,153 @@ using FutureConnection.Core.DTOs;
 using FutureConnection.Core.Entities;
 using FutureConnection.Core.Enums;
 using FutureConnection.Core.Interfaces.Repositories;
+using FutureConnection.Core.Interfaces.Infrastructure;
+using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 
 namespace FutureConnection.CommunityService.Application
 {
-    public class QuestionService(IUnitOfWork uow, IMapper mapper) : IQuestionService
+    public class QuestionService(IUnitOfWork uow, IMapper mapper, IMediaService mediaService) : IQuestionService
     {
         public async Task<PagedResponse<QuestionDto>> GetQuestionsAsync(PagedRequest request)
         {
-            var questions = await uow.Questions.GetAllAsync();
+            var query = uow.Questions.Query();
+            
             if (!string.IsNullOrEmpty(request.Keyword))
-                questions = questions.Where(q => q.Title.Contains(request.Keyword, StringComparison.OrdinalIgnoreCase)).ToList();
-            return PagedResponse<QuestionDto>.Create(mapper.Map<IEnumerable<QuestionDto>>(questions), request.Page, request.PageSize);
+            {
+                query = query.Where(q => q.Title.Contains(request.Keyword) || q.Content.Contains(request.Keyword));
+            }
+
+            var totalCount = await query.CountAsync();
+            
+            var questions = await query
+                .Include(q => q.User).ThenInclude(u => u.Reputations)
+                .Include(q => q.Answers)
+                .Include(q => q.Votes)
+                .Include(q => q.Media)
+                .Include(q => q.QuestionTags).ThenInclude(qt => qt.Tag)
+                .OrderByDescending(q => q.CreatedAt)
+                .Skip((request.Page - 1) * request.PageSize)
+                .Take(request.PageSize)
+                .ToListAsync();
+            
+            var dtos = mapper.Map<IEnumerable<QuestionDto>>(questions);
+            
+            return new PagedResponse<QuestionDto>
+            {
+                Data = dtos,
+                Page = request.Page,
+                PageSize = request.PageSize,
+                TotalCount = totalCount,
+                Success = true
+            };
         }
 
         public async Task<Response<QuestionDto>> GetByIdAsync(Guid id)
         {
-            var q = await uow.Questions.GetByIdAsync(id);
-            return q == null
-                ? new Response<QuestionDto> { Success = false, Message = "Question not found." }
-                : new Response<QuestionDto> { Success = true, Data = mapper.Map<QuestionDto>(q) };
+            var q = await uow.Questions.GetQuestionWithDetailsByIdAsync(id);
+            if (q == null) return new Response<QuestionDto> { Success = false, Message = "Question not found." };
+            
+            q.ViewCount++;
+            uow.Questions.Update(q);
+            await uow.CompleteAsync();
+            
+            return new Response<QuestionDto> { Success = true, Data = mapper.Map<QuestionDto>(q) };
         }
 
         public async Task<Response<QuestionDto>> CreateAsync(CreateQuestionDto dto)
         {
-            var question = mapper.Map<Question>(dto);
-            question.ViewCount = 0;
-            await uow.Questions.CreateAsync(question);
-            await uow.CompleteAsync();
-            return new Response<QuestionDto> { Success = true, Data = mapper.Map<QuestionDto>(question), Message = "Question posted." };
+            if (dto == null) return new Response<QuestionDto> { Success = false, Message = "Question data is required." };
+
+            try
+            {
+                var question = mapper.Map<Question>(dto);
+                question.ViewCount = 0;
+                question.Media = new List<QuestionMedia>();
+                question.QuestionTags = new List<QuestionTag>();
+
+                if (dto.MediaFiles != null && dto.MediaFiles.Any())
+                {
+                    foreach (var file in dto.MediaFiles)
+                    {
+                        var uploadResult = await mediaService.UploadMediaAsync(file);
+                        if (uploadResult != null)
+                        {
+                            question.Media.Add(new QuestionMedia
+                            {
+                                MediaUrl = uploadResult.Url,
+                                PublicId = uploadResult.PublicId,
+                                ResourceType = uploadResult.ResourceType,
+                                QuestionId = question.Id
+                            });
+                        }
+                    }
+                }
+
+                if (dto.Tags != null && dto.Tags.Any())
+                {
+                    foreach (var tagName in dto.Tags.Where(t => !string.IsNullOrWhiteSpace(t)).Select(t => t.Trim()))
+                    {
+                        var tag = (await uow.Tags.FindAsync(t => t.Name.ToLower() == tagName.ToLower())).FirstOrDefault();
+                        if (tag == null)
+                        {
+                            tag = new Tag { Name = tagName };
+                            await uow.Tags.CreateAsync(tag);
+                            // We might need to save tags here to get their IDs if they are not yet saved,
+                            // but EF Core should handle it if we add them to the navigation collection.
+                        }
+
+                        question.QuestionTags.Add(new QuestionTag
+                        {
+                            QuestionId = question.Id,
+                            Tag = tag // Use navigation property instead of TagId for unsaved tags
+                        });
+                    }
+                }
+
+                await uow.Questions.CreateAsync(question);
+                await uow.CompleteAsync(); // Single save for everything
+
+                return new Response<QuestionDto> { Success = true, Data = mapper.Map<QuestionDto>(question), Message = "Question posted." };
+            }
+            catch (Exception ex)
+            {
+                return new Response<QuestionDto> { Success = false, Message = "Failed to post question: " + ex.Message };
+            }
         }
 
         public async Task<Response<QuestionDto>> UpdateAsync(Guid id, Guid requesterId, UpdateQuestionDto dto)
         {
-            var question = await uow.Questions.GetByIdAsync(id);
+            var question = await uow.Questions.GetQuestionWithDetailsByIdAsync(id);
             if (question == null) return new Response<QuestionDto> { Success = false, Message = "Question not found." };
             if (question.UserId != requesterId) return new Response<QuestionDto> { Success = false, Message = "Only the question owner can edit it." };
 
             if (!string.IsNullOrEmpty(dto.Title)) question.Title = dto.Title;
             if (!string.IsNullOrEmpty(dto.Content)) question.Content = dto.Content;
+
+            if (dto.Tags != null)
+            {
+                question.QuestionTags ??= new List<QuestionTag>();
+                question.QuestionTags.Clear();
+                
+                foreach (var tagName in dto.Tags.Where(t => !string.IsNullOrWhiteSpace(t)).Select(t => t.Trim()))
+                {
+                    var tag = (await uow.Tags.FindAsync(t => t.Name.ToLower() == tagName.ToLower())).FirstOrDefault();
+                    if (tag == null)
+                    {
+                        tag = new Tag { Name = tagName };
+                        await uow.Tags.CreateAsync(tag);
+                        await uow.CompleteAsync();
+                    }
+
+                    question.QuestionTags.Add(new QuestionTag
+                    {
+                        QuestionId = question.Id,
+                        TagId = tag.Id
+                    });
+                }
+            }
+
             uow.Questions.Update(question);
             await uow.CompleteAsync();
             return new Response<QuestionDto> { Success = true, Data = mapper.Map<QuestionDto>(question), Message = "Question updated." };
@@ -55,21 +164,51 @@ namespace FutureConnection.CommunityService.Application
 
         public async Task<Response<IEnumerable<AnswerDto>>> GetAnswersAsync(Guid questionId)
         {
-            var answers = await uow.Answers.GetAllAsync();
-            return new Response<IEnumerable<AnswerDto>> { Success = true, Data = mapper.Map<IEnumerable<AnswerDto>>(answers.Where(a => a.QuestionId == questionId)) };
+            var answers = await uow.Answers.GetByQuestionIdAsync(questionId);
+            return new Response<IEnumerable<AnswerDto>> { Success = true, Data = mapper.Map<IEnumerable<AnswerDto>>(answers) };
         }
 
         public async Task<Response<AnswerDto>> PostAnswerAsync(Guid questionId, CreateAnswerDto dto)
         {
+            if (dto == null) return new Response<AnswerDto> { Success = false, Message = "Answer data is required." };
+
             if (await uow.Questions.GetByIdAsync(questionId) == null)
                 return new Response<AnswerDto> { Success = false, Message = "Question not found." };
 
-            dto.QuestionId = questionId;
-            var answer = mapper.Map<Answer>(dto);
-            answer.IsAccepted = false;
-            await uow.Answers.CreateAsync(answer);
-            await uow.CompleteAsync();
-            return new Response<AnswerDto> { Success = true, Data = mapper.Map<AnswerDto>(answer), Message = "Answer posted." };
+            try
+            {
+                dto.QuestionId = questionId;
+                var answer = mapper.Map<Answer>(dto);
+                answer.IsAccepted = false;
+                answer.Media = new List<AnswerMedia>();
+
+                if (dto.MediaFiles != null && dto.MediaFiles.Any())
+                {
+                    foreach (var file in dto.MediaFiles)
+                    {
+                        var uploadResult = await mediaService.UploadMediaAsync(file);
+                        if (uploadResult != null)
+                        {
+                            answer.Media.Add(new AnswerMedia
+                            {
+                                MediaUrl = uploadResult.Url,
+                                PublicId = uploadResult.PublicId,
+                                ResourceType = uploadResult.ResourceType,
+                                AnswerId = answer.Id
+                            });
+                        }
+                    }
+                }
+
+                await uow.Answers.CreateAsync(answer);
+                await uow.CompleteAsync(); // Single save
+
+                return new Response<AnswerDto> { Success = true, Data = mapper.Map<AnswerDto>(answer), Message = "Answer posted." };
+            }
+            catch (Exception ex)
+            {
+                return new Response<AnswerDto> { Success = false, Message = "Failed to post answer: " + ex.Message };
+            }
         }
 
         public async Task<Response<AnswerDto>> AcceptAnswerAsync(Guid answerId, Guid questionOwnerId)
@@ -191,6 +330,12 @@ namespace FutureConnection.CommunityService.Application
             var existing = await uow.Bounties.GetAllAsync();
             if (existing.Any(b => b.QuestionId == questionId && !b.IsAwarded))
                 return new Response<BountyDto> { Success = false, Message = "This question already has an active bounty." };
+
+            var userReps = await uow.Reputations.FindAsync(r => r.UserId == dto.AwarderId);
+            if (userReps.Sum(r => r.Points) < dto.Points)
+                return new Response<BountyDto> { Success = false, Message = "Insufficient reputation to place this bounty." };
+
+            await uow.Reputations.CreateAsync(new Reputation { UserId = dto.AwarderId, Points = -dto.Points, Reason = "Bounty Placed" });
 
             dto.QuestionId = questionId;
             var bounty = mapper.Map<Bounty>(dto);

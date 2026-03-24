@@ -60,6 +60,11 @@ public class UnitOfWork : IUnitOfWork
         Transactions = new TransactionRepository(_context);
         UserBadges = new UserBadgeRepository(_context);
         Votes = new VoteRepository(_context);
+        SupportTickets = new SupportTicketRepository(_context);
+        Policies = new PolicyRepository(_context);
+        FAQs = new FAQRepository(_context);
+        UserLanguages = new UserLanguageRepository(_context);
+        UserFrameworks = new UserFrameworkRepository(_context);
     }
 
     public IUserRepository Users { get; }
@@ -110,6 +115,11 @@ public class UnitOfWork : IUnitOfWork
     public ITransactionRepository Transactions { get; }
     public IUserBadgeRepository UserBadges { get; }
     public IVoteRepository Votes { get; }
+    public ISupportTicketRepository SupportTickets { get; }
+    public IPolicyRepository Policies { get; }
+    public IFAQRepository FAQs { get; }
+    public IUserLanguageRepository UserLanguages { get; }
+    public IUserFrameworkRepository UserFrameworks { get; }
 
     public async Task<int> CompleteAsync() => await _context.SaveChangesAsync();
 

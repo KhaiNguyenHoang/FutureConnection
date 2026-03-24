@@ -12,5 +12,6 @@ namespace FutureConnection.Core.Entities
         public virtual User User { get; set; } = null!;
 
         public virtual ICollection<Vote> Votes { get; set; } = [];
+        public virtual ICollection<AnswerMedia> Media { get; set; } = [];
     }
 }

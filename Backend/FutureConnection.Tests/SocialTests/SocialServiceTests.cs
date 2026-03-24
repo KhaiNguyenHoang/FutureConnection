@@ -59,18 +59,18 @@ namespace FutureConnection.Tests.SocialTests
             var userId = Guid.NewGuid();
             var posts = new List<Post> { new Post { UserId = userId, Title = "A", Content = "B" } };
 
-            _mockPostRepo.Setup(r => r.GetAllAsync()).ReturnsAsync(posts);
+            _mockPostRepo.Setup(r => r.GetAllAsync(false)).ReturnsAsync(posts);
             _mockMapper.Setup(m => m.Map<IEnumerable<PostDto>>(It.IsAny<IEnumerable<Post>>()))
                        .Returns(new List<PostDto> { new PostDto { Title = "A", Content = "B" } });
             
             // Note: SocialService.GetFeedAsync actually pulls connections as well. 
             // Mocking IConnectionRepository to empty just returns the user's posts.
             var mockConnRepo = new Mock<IConnectionRepository>();
-            mockConnRepo.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<Connection>());
+            mockConnRepo.Setup(r => r.GetAllAsync(false)).ReturnsAsync(new List<Connection>());
             _mockUow.Setup(u => u.Connections).Returns(mockConnRepo.Object);
 
             // Act
-            var result = await _socialService.GetFeedAsync(userId, new PagedRequest());
+            var result = await _socialService.GetFeedAsync(userId, null, new PagedRequest());
 
             // Assert
             Assert.True(result.Success);
@@ -81,7 +81,7 @@ namespace FutureConnection.Tests.SocialTests
         {
             // Arrange
             var postId = Guid.NewGuid();
-            _mockPostRepo.Setup(r => r.GetByIdAsync(postId)).ReturnsAsync(new Post { Id = postId, Title = "T", Content = "C" });
+            _mockPostRepo.Setup(r => r.GetByIdAsync(postId, false)).ReturnsAsync(new Post { Id = postId, Title = "T", Content = "C" });
             
             var commRepo = new Mock<ICommentRepository>();
             _mockUow.Setup(u => u.Comments).Returns(commRepo.Object);
@@ -105,11 +105,12 @@ namespace FutureConnection.Tests.SocialTests
             // Arrange
             var postId = Guid.NewGuid();
             var userId = Guid.NewGuid();
-            _mockPostRepo.Setup(r => r.GetByIdAsync(postId)).ReturnsAsync(new Post { Id = postId, Title = "T", Content = "C" });
+            _mockPostRepo.Setup(r => r.GetByIdAsync(postId, false)).ReturnsAsync(new Post { Id = postId, Title = "T", Content = "C" });
 
             var reactRepo = new Mock<IReactionRepository>();
             var existingReaction = new Reaction { PostId = postId, UserId = userId, Type = ReactionType.Like };
-            reactRepo.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<Reaction> { existingReaction });
+            reactRepo.Setup(r => r.FindAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Reaction, bool>>>(), false))
+                     .ReturnsAsync(new List<Reaction> { existingReaction });
             _mockUow.Setup(u => u.Reactions).Returns(reactRepo.Object);
 
             var req = new CreateReactionDto { UserId = userId, Type = ReactionType.Like };

@@ -2,78 +2,54 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #0f172a;
-  --muted: #f1f5f9;
-  --muted-foreground: #64748b;
-  --border: #e2e8f0;
-  --primary: #2563eb;
-  --primary-foreground: #ffffff;
-  --card: #ffffff;
-  --card-foreground: #0f172a;
-  --destructive: #ef4444;
-  --ring: #3b82f6;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0f172a;
-    --foreground: #f1f5f9;
-    --muted: #1e293b;
-    --muted-foreground: #94a3b8;
-    --border: #1e293b;
-    --primary: #3b82f6;
-    --card: #1e293b;
-    --card-foreground: #f1f5f9;
-  }
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-border: var(--border);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-destructive: var(--destructive);
-  --color-ring: var(--ring);
-}
-
-* {
-  box-sizing: border-box;
+  --foreground: #171717;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  font-family: Arial, Helvetica, sans-serif;
 }
 
-/* Scrollbar */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border); border-radius: 999px; }
-::-webkit-scrollbar-thumb:hover { background: var(--muted-foreground); }
+/* Quill Content Styles */
+.quill-content h1 { font-size: 2rem; font-weight: 900; margin-bottom: 1rem; text-transform: uppercase; }
+.quill-content h2 { font-size: 1.5rem; font-weight: 900; margin-bottom: 0.75rem; text-transform: uppercase; }
+.quill-content h3 { font-size: 1.25rem; font-weight: 900; margin-bottom: 0.5rem; text-transform: uppercase; }
+.quill-content p { margin-bottom: 1rem; }
+.quill-content ul { list-style-type: disc; padding-left: 1.5rem; margin-bottom: 1rem; }
+.quill-content ol { list-style-type: decimal; padding-left: 1.5rem; margin-bottom: 1rem; }
+.quill-content strong { font-weight: 900; }
 
-/* Animations */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+/* Quill Font Classes */
+.ql-font-serif {
+  font-family: Georgia, Times New Roman, serif;
+}
+.ql-font-monospace {
+  font-family: Monaco, Courier New, monospace;
 }
 
-@keyframes slideInRight {
-  from { opacity: 0; transform: translateX(16px); }
-  to { opacity: 1; transform: translateX(0); }
+/* CreatePost Quill Wrapper Styles */
+.quill-wrapper .ql-toolbar.ql-snow {
+  border: none !important;
+  background: #f8fafc;
+  padding: 12px;
+  border-radius: 1.5rem 1.5rem 0 0;
+  border-bottom: 1px solid #f1f5f9 !important;
+}
+.quill-wrapper .ql-container.ql-snow {
+  border: none !important;
+  font-family: inherit;
+  font-size: 0.875rem;
+  min-height: 120px;
+  border-radius: 0 0 1.5rem 1.5rem;
+}
+.quill-wrapper .ql-editor {
+  min-height: 120px;
+  padding: 24px;
+}
+.quill-wrapper .ql-editor.ql-blank::before {
+  color: #a1a1aa;
+  font-style: normal;
+  left: 24px;
 }
 
-@keyframes pulse-slow {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
-}
-
-.animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
-.animate-slide-in { animation: slideInRight 0.3s ease-out forwards; }

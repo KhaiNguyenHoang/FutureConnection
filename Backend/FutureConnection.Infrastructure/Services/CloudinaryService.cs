@@ -30,12 +30,11 @@ namespace FutureConnection.Infrastructure.Services
         {
             if (file.Length == 0) return null;
 
-            using var stream = file.OpenReadStream();
-            
+            await using var stream = file.OpenReadStream();
             // Auto detection of resource type (image vs video)
             // Or we check content type
             bool isVideo = file.ContentType.StartsWith("video/");
-            
+
             if (isVideo)
             {
                 var uploadParams = new VideoUploadParams()

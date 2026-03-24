@@ -12,4 +12,24 @@ public class PostRepository(FutureConnectionDbContext context) : GenericReposito
 
     public async Task<IEnumerable<Post>> GetPostsByAuthorAsync(Guid authorId) =>
         await _context.Posts.Where(p => p.UserId == authorId).ToListAsync();
+
+    public async Task<IReadOnlyList<Post>> GetPostsWithDetailsAsync(System.Linq.Expressions.Expression<Func<Post, bool>> predicate) =>
+        await _context.Posts
+            .Include(p => p.User)
+            .Include(p => p.Reactions)
+            .Include(p => p.Comments)
+            .Include(p => p.Media)
+            .Include(p => p.PostTags).ThenInclude(pt => pt.Tag)
+            .Where(predicate)
+            .OrderByDescending(p => p.CreatedAt)
+            .ToListAsync();
+
+    public async Task<Post?> GetPostWithDetailsByIdAsync(Guid postId) =>
+        await _context.Posts
+            .Include(p => p.User)
+            .Include(p => p.Reactions)
+            .Include(p => p.Comments)
+            .Include(p => p.Media)
+            .Include(p => p.PostTags).ThenInclude(pt => pt.Tag)
+            .FirstOrDefaultAsync(p => p.Id == postId);
 }

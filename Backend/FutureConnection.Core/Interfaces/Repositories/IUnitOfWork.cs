@@ -50,6 +50,12 @@ public interface IUnitOfWork : IDisposable
     ITransactionRepository Transactions { get; }
     IUserBadgeRepository UserBadges { get; }
     IVoteRepository Votes { get; }
+    ISupportTicketRepository SupportTickets { get; }
+    IPolicyRepository Policies { get; }
+    IFAQRepository FAQs { get; }
+
+    IUserLanguageRepository UserLanguages { get; }
+    IUserFrameworkRepository UserFrameworks { get; }
 
     Task<int> CompleteAsync();
     Task BeginTransactionAsync();

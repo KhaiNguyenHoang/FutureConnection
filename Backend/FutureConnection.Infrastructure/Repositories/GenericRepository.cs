@@ -33,6 +33,14 @@ public class GenericRepository<T>(FutureConnectionDbContext context) : IGenericR
         return await query.ToListAsync();
     }
 
+    public virtual IQueryable<T> Query(bool includeDeleted = false)
+    {
+        var query = _context.Set<T>().AsQueryable();
+        if (!includeDeleted)
+            query = query.Where(e => !e.IsDeleted);
+        return query;
+    }
+
     public virtual async Task<T> CreateAsync(T entity)
     {
         entity.CreatedAt = DateTime.UtcNow;

@@ -8,6 +8,9 @@ namespace FutureConnection.Core.Entities
         public Guid UserId { get; set; }
         public virtual User User { get; set; } = null!;
 
+        public int ShareCount { get; set; } = 0;
+        public int ViewCount { get; set; } = 0;
+
         public virtual ICollection<Comment> Comments { get; set; } = [];
         public virtual ICollection<Reaction> Reactions { get; set; } = [];
         public virtual ICollection<PostTag> PostTags { get; set; } = [];

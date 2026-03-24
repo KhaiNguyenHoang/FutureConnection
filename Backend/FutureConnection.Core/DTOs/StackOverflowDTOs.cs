@@ -1,5 +1,6 @@
 using System;
 using FutureConnection.Core.Enums;
+using Microsoft.AspNetCore.Http;
 
 namespace FutureConnection.Core.DTOs
 {
@@ -9,7 +10,22 @@ namespace FutureConnection.Core.DTOs
         public required string Title { get; set; }
         public required string Content { get; set; }
         public int ViewCount { get; set; }
+        public int AnswerCount { get; set; }
+        public int VoteCount { get; set; }
         public Guid UserId { get; set; }
+        
+        public string? AuthorFirstName { get; set; }
+        public string? AuthorLastName { get; set; }
+        public string? AuthorAvatarUrl { get; set; }
+        public List<string>? Tags { get; set; }
+        public List<QuestionMediaDto>? Media { get; set; }
+    }
+
+    public class QuestionMediaDto : BaseDto
+    {
+        public required string MediaUrl { get; set; }
+        public string? PublicId { get; set; }
+        public string? ResourceType { get; set; }
     }
 
     public class CreateQuestionDto
@@ -17,6 +33,8 @@ namespace FutureConnection.Core.DTOs
         public required string Title { get; set; }
         public required string Content { get; set; }
         public Guid UserId { get; set; }
+        public List<string>? Tags { get; set; }
+        public IFormFileCollection? MediaFiles { get; set; }
     }
 
     public class UpdateQuestionDto
@@ -24,6 +42,7 @@ namespace FutureConnection.Core.DTOs
         public Guid Id { get; set; }
         public string? Title { get; set; }
         public string? Content { get; set; }
+        public List<string>? Tags { get; set; }
     }
 
     // --- Answer DTOs ---
@@ -31,8 +50,22 @@ namespace FutureConnection.Core.DTOs
     {
         public required string Content { get; set; }
         public bool IsAccepted { get; set; }
+        public int VoteCount { get; set; }
         public Guid QuestionId { get; set; }
         public Guid UserId { get; set; }
+
+        public string? AuthorFirstName { get; set; }
+        public string? AuthorLastName { get; set; }
+        public string? AuthorAvatarUrl { get; set; }
+        public int AuthorReputation { get; set; }
+        public List<AnswerMediaDto>? Media { get; set; }
+    }
+
+    public class AnswerMediaDto : BaseDto
+    {
+        public required string MediaUrl { get; set; }
+        public string? PublicId { get; set; }
+        public string? ResourceType { get; set; }
     }
 
     public class CreateAnswerDto
@@ -40,6 +73,7 @@ namespace FutureConnection.Core.DTOs
         public required string Content { get; set; }
         public Guid QuestionId { get; set; }
         public Guid UserId { get; set; }
+        public IFormFileCollection? MediaFiles { get; set; }
     }
 
     public class UpdateAnswerDto

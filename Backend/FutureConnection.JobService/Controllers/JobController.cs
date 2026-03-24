@@ -36,14 +36,14 @@ namespace FutureConnection.JobService.Controllers
         [Authorize(Roles = "Employer,Admin")]
         public async Task<IActionResult> UpdateJob(Guid id, [FromBody] UpdateJobDto dto)
         {
-            var result = await jobService.UpdateAsync(id, User.GetUserId(), dto);
+            var result = await jobService.UpdateAsync(id, User.GetUserId(), User.IsInRole("Admin"), dto);
             return result.Success ? Ok(result) : NotFound(result);
         }
 
         [HttpDelete("{id:guid}")]
         [Authorize(Roles = "Employer,Admin")]
         public async Task<IActionResult> DeleteJob(Guid id)
-            => Ok(await jobService.DeleteAsync(id, User.GetUserId()));
+            => Ok(await jobService.DeleteAsync(id, User.GetUserId(), User.IsInRole("Admin")));
 
         [HttpGet("my-applications")]
         [Authorize(Roles = "Freelancer,Admin")]
@@ -53,7 +53,7 @@ namespace FutureConnection.JobService.Controllers
         [HttpGet("{id:guid}/applications")]
         [Authorize(Roles = "Employer,Admin")]
         public async Task<IActionResult> GetApplications(Guid id)
-            => Ok(await jobService.GetApplicationsAsync(id, User.GetUserId()));
+            => Ok(await jobService.GetApplicationsAsync(id, User.GetUserId(), User.IsInRole("Admin")));
 
         [HttpPost("{id:guid}/apply")]
         [Authorize(Roles = "Freelancer,Admin")]
@@ -67,7 +67,7 @@ namespace FutureConnection.JobService.Controllers
         [Authorize(Roles = "Employer,Admin")]
         public async Task<IActionResult> UpdateApplicationStatus(Guid applicationId, [FromQuery] ApplicationStatus status)
         {
-            var result = await jobService.UpdateApplicationStatusAsync(applicationId, User.GetUserId(), status);
+            var result = await jobService.UpdateApplicationStatusAsync(applicationId, User.GetUserId(), User.IsInRole("Admin"), status);
             return result.Success ? Ok(result) : NotFound(result);
         }
 

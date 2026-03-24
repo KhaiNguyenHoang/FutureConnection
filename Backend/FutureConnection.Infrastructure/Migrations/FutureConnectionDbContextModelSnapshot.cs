@@ -22,6 +22,63 @@ namespace FutureConnection.Infrastructure.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("FrameworkFrameworkTypes", b =>
+                {
+                    b.Property<Guid>("FrameworksId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("FrameworkTypesId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("FrameworksId", "FrameworkTypesId");
+
+                    b.HasIndex("FrameworkTypesId");
+
+                    b.ToTable("FrameworkFrameworkTypes");
+
+                    b.HasData(
+                        new
+                        {
+                            FrameworksId = new Guid("b0010001-0001-0001-0001-000000000001"),
+                            FrameworkTypesId = new Guid("f0010001-0001-0001-0001-000000000001")
+                        },
+                        new
+                        {
+                            FrameworksId = new Guid("b0010001-0001-0001-0001-000000000002"),
+                            FrameworkTypesId = new Guid("f0010001-0001-0001-0001-000000000001")
+                        },
+                        new
+                        {
+                            FrameworksId = new Guid("b0010001-0001-0001-0001-000000000002"),
+                            FrameworkTypesId = new Guid("f0010001-0001-0001-0001-000000000002")
+                        },
+                        new
+                        {
+                            FrameworksId = new Guid("b0010001-0001-0001-0001-000000000003"),
+                            FrameworkTypesId = new Guid("f0010001-0001-0001-0001-000000000001")
+                        },
+                        new
+                        {
+                            FrameworksId = new Guid("b0010001-0001-0001-0001-000000000004"),
+                            FrameworkTypesId = new Guid("f0010001-0001-0001-0001-000000000001")
+                        },
+                        new
+                        {
+                            FrameworksId = new Guid("b0010001-0001-0001-0001-000000000005"),
+                            FrameworkTypesId = new Guid("f0010001-0001-0001-0001-000000000002")
+                        },
+                        new
+                        {
+                            FrameworksId = new Guid("b0010001-0001-0001-0001-000000000006"),
+                            FrameworkTypesId = new Guid("f0010001-0001-0001-0001-000000000002")
+                        },
+                        new
+                        {
+                            FrameworksId = new Guid("b0010001-0001-0001-0001-000000000007"),
+                            FrameworkTypesId = new Guid("f0010001-0001-0001-0001-000000000002")
+                        });
+                });
+
             modelBuilder.Entity("FutureConnection.Core.Entities.Agency", b =>
                 {
                     b.Property<Guid>("Id")
@@ -142,6 +199,46 @@ namespace FutureConnection.Infrastructure.Migrations
                     b.ToTable("Answers");
                 });
 
+            modelBuilder.Entity("FutureConnection.Core.Entities.AnswerMedia", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("AnswerId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("MediaUrl")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PublicId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ResourceType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AnswerId");
+
+                    b.ToTable("AnswerMedia");
+                });
+
             modelBuilder.Entity("FutureConnection.Core.Entities.Application", b =>
                 {
                     b.Property<Guid>("Id")
@@ -177,6 +274,7 @@ namespace FutureConnection.Infrastructure.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal?>("ProposedPrice")
+                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<int>("Status")
@@ -440,9 +538,6 @@ namespace FutureConnection.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid?>("CodeLanguageId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -468,9 +563,69 @@ namespace FutureConnection.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CodeLanguageId");
-
                     b.ToTable("CodeLanguages");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("a0010001-0001-0001-0001-000000000001"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DocumentationUrl = "https://developer.mozilla.org/en-US/docs/Web/JavaScript",
+                            IsActive = true,
+                            IsDeleted = false,
+                            Name = "JavaScript",
+                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = new Guid("a0010001-0001-0001-0001-000000000002"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DocumentationUrl = "https://www.typescriptlang.org/docs/",
+                            IsActive = true,
+                            IsDeleted = false,
+                            Name = "TypeScript",
+                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = new Guid("a0010001-0001-0001-0001-000000000003"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DocumentationUrl = "https://docs.python.org/3/",
+                            IsActive = true,
+                            IsDeleted = false,
+                            Name = "Python",
+                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = new Guid("a0010001-0001-0001-0001-000000000004"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DocumentationUrl = "https://learn.microsoft.com/en-us/dotnet/csharp/",
+                            IsActive = true,
+                            IsDeleted = false,
+                            Name = "C#",
+                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = new Guid("a0010001-0001-0001-0001-000000000005"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DocumentationUrl = "https://docs.oracle.com/en/java/",
+                            IsActive = true,
+                            IsDeleted = false,
+                            Name = "Java",
+                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = new Guid("a0010001-0001-0001-0001-000000000006"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DocumentationUrl = "https://doc.rust-lang.org/book/",
+                            IsActive = true,
+                            IsDeleted = false,
+                            Name = "Rust",
+                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        });
                 });
 
             modelBuilder.Entity("FutureConnection.Core.Entities.Comment", b =>
@@ -681,6 +836,7 @@ namespace FutureConnection.Infrastructure.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal>("AgreedPrice")
+                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<Guid>("ApplicationId")
@@ -733,6 +889,7 @@ namespace FutureConnection.Infrastructure.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<Guid>("ContractId")
@@ -854,6 +1011,70 @@ namespace FutureConnection.Infrastructure.Migrations
                     b.ToTable("Endorsements");
                 });
 
+            modelBuilder.Entity("FutureConnection.Core.Entities.FAQ", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Answer")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Question")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("FAQs");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("d6cb4d23-f9be-412f-bfa5-a15876205d98"),
+                            Answer = "Use multi-factor authentication.",
+                            Category = "Security",
+                            CreatedAt = new DateTime(2026, 3, 24, 8, 1, 33, 501, DateTimeKind.Utc).AddTicks(5371),
+                            DisplayOrder = 1,
+                            IsActive = true,
+                            IsDeleted = false,
+                            Question = "How do I secure my neural link?",
+                            UpdatedAt = new DateTime(2026, 3, 24, 8, 1, 33, 501, DateTimeKind.Utc).AddTicks(5371)
+                        },
+                        new
+                        {
+                            Id = new Guid("f23a986e-d59b-4495-9101-b17e38413f8a"),
+                            Answer = "It uses high-frequency analysis.",
+                            Category = "General",
+                            CreatedAt = new DateTime(2026, 3, 24, 8, 1, 33, 501, DateTimeKind.Utc).AddTicks(5382),
+                            DisplayOrder = 2,
+                            IsActive = true,
+                            IsDeleted = false,
+                            Question = "What is the Smart Matching algorithm?",
+                            UpdatedAt = new DateTime(2026, 3, 24, 8, 1, 33, 501, DateTimeKind.Utc).AddTicks(5382)
+                        });
+                });
+
             modelBuilder.Entity("FutureConnection.Core.Entities.Framework", b =>
                 {
                     b.Property<Guid>("Id")
@@ -901,6 +1122,85 @@ namespace FutureConnection.Infrastructure.Migrations
                     b.HasIndex("PersonalProjectId");
 
                     b.ToTable("Frameworks");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("b0010001-0001-0001-0001-000000000001"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DocumentationUrl = "https://react.dev/",
+                            IsActive = true,
+                            IsDeleted = false,
+                            LanguageId = new Guid("a0010001-0001-0001-0001-000000000001"),
+                            Name = "React",
+                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = new Guid("b0010001-0001-0001-0001-000000000002"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DocumentationUrl = "https://nextjs.org/",
+                            IsActive = true,
+                            IsDeleted = false,
+                            LanguageId = new Guid("a0010001-0001-0001-0001-000000000002"),
+                            Name = "Next.js",
+                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = new Guid("b0010001-0001-0001-0001-000000000003"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DocumentationUrl = "https://vuejs.org/",
+                            IsActive = true,
+                            IsDeleted = false,
+                            LanguageId = new Guid("a0010001-0001-0001-0001-000000000001"),
+                            Name = "Vue.js",
+                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = new Guid("b0010001-0001-0001-0001-000000000004"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DocumentationUrl = "https://angular.io/",
+                            IsActive = true,
+                            IsDeleted = false,
+                            LanguageId = new Guid("a0010001-0001-0001-0001-000000000002"),
+                            Name = "Angular",
+                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = new Guid("b0010001-0001-0001-0001-000000000005"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DocumentationUrl = "https://dotnet.microsoft.com/",
+                            IsActive = true,
+                            IsDeleted = false,
+                            LanguageId = new Guid("a0010001-0001-0001-0001-000000000004"),
+                            Name = ".NET",
+                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = new Guid("b0010001-0001-0001-0001-000000000006"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DocumentationUrl = "https://www.djangoproject.com/",
+                            IsActive = true,
+                            IsDeleted = false,
+                            LanguageId = new Guid("a0010001-0001-0001-0001-000000000003"),
+                            Name = "Django",
+                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = new Guid("b0010001-0001-0001-0001-000000000007"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DocumentationUrl = "https://spring.io/projects/spring-boot",
+                            IsActive = true,
+                            IsDeleted = false,
+                            LanguageId = new Guid("a0010001-0001-0001-0001-000000000005"),
+                            Name = "Spring Boot",
+                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        });
                 });
 
             modelBuilder.Entity("FutureConnection.Core.Entities.FrameworkType", b =>
@@ -914,9 +1214,6 @@ namespace FutureConnection.Infrastructure.Migrations
 
                     b.Property<string>("Description")
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<Guid?>("FrameworkId")
-                        .HasColumnType("uniqueidentifier");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
@@ -933,9 +1230,45 @@ namespace FutureConnection.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("FrameworkId");
-
                     b.ToTable("FrameworkTypes");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("f0010001-0001-0001-0001-000000000001"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            IsDeleted = false,
+                            Name = "Web_Frontend",
+                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = new Guid("f0010001-0001-0001-0001-000000000002"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            IsDeleted = false,
+                            Name = "Web_Backend",
+                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = new Guid("f0010001-0001-0001-0001-000000000003"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            IsDeleted = false,
+                            Name = "Mobile",
+                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = new Guid("f0010001-0001-0001-0001-000000000004"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            IsDeleted = false,
+                            Name = "Desktop",
+                            UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        });
                 });
 
             modelBuilder.Entity("FutureConnection.Core.Entities.Group", b =>
@@ -959,9 +1292,15 @@ namespace FutureConnection.Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("IsPrivate")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("OwnerId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -1014,6 +1353,7 @@ namespace FutureConnection.Infrastructure.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal?>("Budget")
+                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<Guid?>("CompanyId")
@@ -1045,9 +1385,11 @@ namespace FutureConnection.Infrastructure.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal?>("SalaryMax")
+                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<decimal?>("SalaryMin")
+                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("SeniorityLevel")
@@ -1058,7 +1400,7 @@ namespace FutureConnection.Infrastructure.Migrations
 
                     b.Property<string>("Title")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -1070,6 +1412,8 @@ namespace FutureConnection.Infrastructure.Migrations
                     b.HasIndex("EmployerId");
 
                     b.HasIndex("JobTypeId");
+
+                    b.HasIndex("Title");
 
                     b.ToTable("Jobs");
                 });
@@ -1316,7 +1660,7 @@ namespace FutureConnection.Infrastructure.Migrations
                     b.ToTable("PersonalProjects");
                 });
 
-            modelBuilder.Entity("FutureConnection.Core.Entities.Post", b =>
+            modelBuilder.Entity("FutureConnection.Core.Entities.Policy", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -1339,13 +1683,86 @@ namespace FutureConnection.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Version")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Policies");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("11111111-1111-1111-1111-111111111111"),
+                            Content = "# Privacy Shield Protocol\n\nYour data is protected by high-level encryption standards.",
+                            CreatedAt = new DateTime(2026, 3, 24, 8, 1, 33, 501, DateTimeKind.Utc).AddTicks(5334),
+                            IsActive = true,
+                            IsDeleted = false,
+                            Title = "Privacy Shield Protocol",
+                            Type = "privacy",
+                            UpdatedAt = new DateTime(2026, 3, 24, 8, 1, 33, 501, DateTimeKind.Utc).AddTicks(5334),
+                            Version = "1.0.0"
+                        },
+                        new
+                        {
+                            Id = new Guid("22222222-2222-2222-2222-222222222222"),
+                            Content = "# Terms of System Operation\n\nBy accessing FutureConnection, you agree to abide by the industrial standards of professional conduct.",
+                            CreatedAt = new DateTime(2026, 3, 24, 8, 1, 33, 501, DateTimeKind.Utc).AddTicks(5341),
+                            IsActive = true,
+                            IsDeleted = false,
+                            Title = "Terms of System Operation",
+                            Type = "terms",
+                            UpdatedAt = new DateTime(2026, 3, 24, 8, 1, 33, 501, DateTimeKind.Utc).AddTicks(5341),
+                            Version = "1.0.0"
+                        });
+                });
+
+            modelBuilder.Entity("FutureConnection.Core.Entities.Post", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("ShareCount")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<int>("ViewCount")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("Title");
 
                     b.HasIndex("UserId");
 
@@ -1478,7 +1895,7 @@ namespace FutureConnection.Infrastructure.Migrations
 
                     b.Property<string>("Title")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -1491,9 +1908,51 @@ namespace FutureConnection.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("Title");
+
                     b.HasIndex("UserId");
 
                     b.ToTable("Questions");
+                });
+
+            modelBuilder.Entity("FutureConnection.Core.Entities.QuestionMedia", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("MediaUrl")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PublicId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("QuestionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ResourceType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("QuestionId");
+
+                    b.ToTable("QuestionMedia");
                 });
 
             modelBuilder.Entity("FutureConnection.Core.Entities.QuestionTag", b =>
@@ -1731,32 +2190,32 @@ namespace FutureConnection.Infrastructure.Migrations
                         new
                         {
                             Id = new Guid("a78b3f5c-1e9d-4c62-bb74-92a3d1e4f8c1"),
-                            CreatedAt = new DateTime(2026, 3, 20, 17, 40, 27, 18, DateTimeKind.Utc).AddTicks(1753),
+                            CreatedAt = new DateTime(2026, 3, 24, 8, 1, 33, 501, DateTimeKind.Utc).AddTicks(5200),
                             Description = "Full system administration access.",
                             IsActive = true,
                             IsDeleted = false,
                             Name = "Admin",
-                            UpdatedAt = new DateTime(2026, 3, 20, 17, 40, 27, 18, DateTimeKind.Utc).AddTicks(1753)
+                            UpdatedAt = new DateTime(2026, 3, 24, 8, 1, 33, 501, DateTimeKind.Utc).AddTicks(5201)
                         },
                         new
                         {
                             Id = new Guid("b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e"),
-                            CreatedAt = new DateTime(2026, 3, 20, 17, 40, 27, 18, DateTimeKind.Utc).AddTicks(1761),
+                            CreatedAt = new DateTime(2026, 3, 24, 8, 1, 33, 501, DateTimeKind.Utc).AddTicks(5208),
                             Description = "Can post jobs, manage applications, and hire freelancers.",
                             IsActive = true,
                             IsDeleted = false,
                             Name = "Employer",
-                            UpdatedAt = new DateTime(2026, 3, 20, 17, 40, 27, 18, DateTimeKind.Utc).AddTicks(1761)
+                            UpdatedAt = new DateTime(2026, 3, 24, 8, 1, 33, 501, DateTimeKind.Utc).AddTicks(5208)
                         },
                         new
                         {
                             Id = new Guid("c3d4e5f6-a7b8-4c9d-0e1f-2a3b4c5d6e7f"),
-                            CreatedAt = new DateTime(2026, 3, 20, 17, 40, 27, 18, DateTimeKind.Utc).AddTicks(1765),
+                            CreatedAt = new DateTime(2026, 3, 24, 8, 1, 33, 501, DateTimeKind.Utc).AddTicks(5212),
                             Description = "Can apply for jobs, deliver projects, and earn reputation.",
                             IsActive = true,
                             IsDeleted = false,
                             Name = "Freelancer",
-                            UpdatedAt = new DateTime(2026, 3, 20, 17, 40, 27, 18, DateTimeKind.Utc).AddTicks(1765)
+                            UpdatedAt = new DateTime(2026, 3, 24, 8, 1, 33, 501, DateTimeKind.Utc).AddTicks(5212)
                         });
                 });
 
@@ -1798,6 +2257,52 @@ namespace FutureConnection.Infrastructure.Migrations
                     b.ToTable("SocialMediaLinks");
                 });
 
+            modelBuilder.Entity("FutureConnection.Core.Entities.SupportTicket", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Area")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Subject")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Urgency")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("SupportTickets");
+                });
+
             modelBuilder.Entity("FutureConnection.Core.Entities.Tag", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1832,6 +2337,7 @@ namespace FutureConnection.Infrastructure.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<DateTime>("CreatedAt")
@@ -1889,7 +2395,7 @@ namespace FutureConnection.Infrastructure.Migrations
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("EmailVerificationToken")
                         .HasColumnType("nvarchar(max)");
@@ -1956,6 +2462,9 @@ namespace FutureConnection.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("Email")
+                        .IsUnique();
+
                     b.HasIndex("RoleId");
 
                     b.HasIndex("SocialMediaId");
@@ -1991,6 +2500,66 @@ namespace FutureConnection.Infrastructure.Migrations
                     b.HasIndex("BadgeId");
 
                     b.ToTable("UserBadges");
+                });
+
+            modelBuilder.Entity("FutureConnection.Core.Entities.UserFramework", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("FrameworkId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("UserId", "FrameworkId");
+
+                    b.HasIndex("FrameworkId");
+
+                    b.ToTable("UserFrameworks");
+                });
+
+            modelBuilder.Entity("FutureConnection.Core.Entities.UserLanguage", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("CodeLanguageId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("UserId", "CodeLanguageId");
+
+                    b.HasIndex("CodeLanguageId");
+
+                    b.ToTable("UserLanguages");
                 });
 
             modelBuilder.Entity("FutureConnection.Core.Entities.Vote", b =>
@@ -2032,6 +2601,21 @@ namespace FutureConnection.Infrastructure.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("Votes");
+                });
+
+            modelBuilder.Entity("FrameworkFrameworkTypes", b =>
+                {
+                    b.HasOne("FutureConnection.Core.Entities.FrameworkType", null)
+                        .WithMany()
+                        .HasForeignKey("FrameworkTypesId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("FutureConnection.Core.Entities.Framework", null)
+                        .WithMany()
+                        .HasForeignKey("FrameworksId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("FutureConnection.Core.Entities.Agency", b =>
@@ -2081,6 +2665,17 @@ namespace FutureConnection.Infrastructure.Migrations
                     b.Navigation("Question");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("FutureConnection.Core.Entities.AnswerMedia", b =>
+                {
+                    b.HasOne("FutureConnection.Core.Entities.Answer", "Answer")
+                        .WithMany("Media")
+                        .HasForeignKey("AnswerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Answer");
                 });
 
             modelBuilder.Entity("FutureConnection.Core.Entities.Application", b =>
@@ -2167,13 +2762,6 @@ namespace FutureConnection.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Group");
-                });
-
-            modelBuilder.Entity("FutureConnection.Core.Entities.CodeLanguage", b =>
-                {
-                    b.HasOne("FutureConnection.Core.Entities.CodeLanguage", null)
-                        .WithMany("CodeLanguages")
-                        .HasForeignKey("CodeLanguageId");
                 });
 
             modelBuilder.Entity("FutureConnection.Core.Entities.Comment", b =>
@@ -2358,20 +2946,14 @@ namespace FutureConnection.Infrastructure.Migrations
 
                     b.HasOne("FutureConnection.Core.Entities.CodeLanguage", "Language")
                         .WithMany("Frameworks")
-                        .HasForeignKey("LanguageId");
+                        .HasForeignKey("LanguageId")
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("FutureConnection.Core.Entities.PersonalProject", null)
                         .WithMany("Frameworks")
                         .HasForeignKey("PersonalProjectId");
 
                     b.Navigation("Language");
-                });
-
-            modelBuilder.Entity("FutureConnection.Core.Entities.FrameworkType", b =>
-                {
-                    b.HasOne("FutureConnection.Core.Entities.Framework", null)
-                        .WithMany("FrameworkTypes")
-                        .HasForeignKey("FrameworkId");
                 });
 
             modelBuilder.Entity("FutureConnection.Core.Entities.GroupMember", b =>
@@ -2559,6 +3141,17 @@ namespace FutureConnection.Infrastructure.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("FutureConnection.Core.Entities.QuestionMedia", b =>
+                {
+                    b.HasOne("FutureConnection.Core.Entities.Question", "Question")
+                        .WithMany("Media")
+                        .HasForeignKey("QuestionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Question");
+                });
+
             modelBuilder.Entity("FutureConnection.Core.Entities.QuestionTag", b =>
                 {
                     b.HasOne("FutureConnection.Core.Entities.Question", "Question")
@@ -2581,7 +3174,7 @@ namespace FutureConnection.Infrastructure.Migrations
             modelBuilder.Entity("FutureConnection.Core.Entities.Reaction", b =>
                 {
                     b.HasOne("FutureConnection.Core.Entities.Comment", "Comment")
-                        .WithMany()
+                        .WithMany("Reactions")
                         .HasForeignKey("CommentId");
 
                     b.HasOne("FutureConnection.Core.Entities.Message", "Message")
@@ -2595,7 +3188,7 @@ namespace FutureConnection.Infrastructure.Migrations
                     b.HasOne("FutureConnection.Core.Entities.User", "User")
                         .WithMany("Reactions")
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Comment");
@@ -2654,6 +3247,17 @@ namespace FutureConnection.Infrastructure.Migrations
                     b.Navigation("Reviewee");
 
                     b.Navigation("Reviewer");
+                });
+
+            modelBuilder.Entity("FutureConnection.Core.Entities.SupportTicket", b =>
+                {
+                    b.HasOne("FutureConnection.Core.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("FutureConnection.Core.Entities.Transaction", b =>
@@ -2715,6 +3319,44 @@ namespace FutureConnection.Infrastructure.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("FutureConnection.Core.Entities.UserFramework", b =>
+                {
+                    b.HasOne("FutureConnection.Core.Entities.Framework", "Framework")
+                        .WithMany()
+                        .HasForeignKey("FrameworkId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("FutureConnection.Core.Entities.User", "User")
+                        .WithMany("UserFrameworks")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Framework");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("FutureConnection.Core.Entities.UserLanguage", b =>
+                {
+                    b.HasOne("FutureConnection.Core.Entities.CodeLanguage", "CodeLanguage")
+                        .WithMany()
+                        .HasForeignKey("CodeLanguageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("FutureConnection.Core.Entities.User", "User")
+                        .WithMany("UserLanguages")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CodeLanguage");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("FutureConnection.Core.Entities.Vote", b =>
                 {
                     b.HasOne("FutureConnection.Core.Entities.Answer", "Answer")
@@ -2749,6 +3391,8 @@ namespace FutureConnection.Infrastructure.Migrations
 
             modelBuilder.Entity("FutureConnection.Core.Entities.Answer", b =>
                 {
+                    b.Navigation("Media");
+
                     b.Navigation("Votes");
                 });
 
@@ -2775,14 +3419,14 @@ namespace FutureConnection.Infrastructure.Migrations
 
             modelBuilder.Entity("FutureConnection.Core.Entities.CodeLanguage", b =>
                 {
-                    b.Navigation("CodeLanguages");
-
                     b.Navigation("Frameworks");
                 });
 
             modelBuilder.Entity("FutureConnection.Core.Entities.Comment", b =>
                 {
                     b.Navigation("Media");
+
+                    b.Navigation("Reactions");
 
                     b.Navigation("Replies");
                 });
@@ -2803,11 +3447,6 @@ namespace FutureConnection.Infrastructure.Migrations
                     b.Navigation("Reviews");
 
                     b.Navigation("Transactions");
-                });
-
-            modelBuilder.Entity("FutureConnection.Core.Entities.Framework", b =>
-                {
-                    b.Navigation("FrameworkTypes");
                 });
 
             modelBuilder.Entity("FutureConnection.Core.Entities.Group", b =>
@@ -2852,6 +3491,8 @@ namespace FutureConnection.Infrastructure.Migrations
             modelBuilder.Entity("FutureConnection.Core.Entities.Question", b =>
                 {
                     b.Navigation("Answers");
+
+                    b.Navigation("Media");
 
                     b.Navigation("QuestionTags");
 
@@ -2934,6 +3575,10 @@ namespace FutureConnection.Infrastructure.Migrations
                     b.Navigation("Transactions");
 
                     b.Navigation("UserBadges");
+
+                    b.Navigation("UserFrameworks");
+
+                    b.Navigation("UserLanguages");
 
                     b.Navigation("Votes");
                 });
